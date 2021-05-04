@@ -21,22 +21,21 @@ import org.apache.camel.test.infra.common.services.ContainerService;
 import org.apache.camel.test.infra.kafka.common.KafkaProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.KafkaContainer;
 
-public class ContainerLocalKafkaService implements KafkaService, ContainerService<KafkaContainer> {
+public class ContainerLocalKafkaService implements KafkaService, ContainerService<KafkaNoZookeeperContainer> {
     private static final Logger LOG = LoggerFactory.getLogger(ContainerLocalKafkaService.class);
-    private final KafkaContainer kafka;
+    private final KafkaNoZookeeperContainer kafka;
 
     public ContainerLocalKafkaService() {
-        kafka = initContainer();
+        kafka = new KafkaNoZookeeperContainer();
     }
 
-    public ContainerLocalKafkaService(KafkaContainer kafka) {
+    public ContainerLocalKafkaService(KafkaNoZookeeperContainer kafka) {
         this.kafka = kafka;
     }
 
-    protected KafkaContainer initContainer() {
-        return new KafkaContainer().withEmbeddedZookeeper();
+    protected KafkaNoZookeeperContainer initContainer() {
+        return new KafkaNoZookeeperContainer();
     }
 
     public String getBootstrapServers() {
@@ -62,7 +61,7 @@ public class ContainerLocalKafkaService implements KafkaService, ContainerServic
     }
 
     @Override
-    public KafkaContainer getContainer() {
+    public KafkaNoZookeeperContainer getContainer() {
         return kafka;
     }
 }
