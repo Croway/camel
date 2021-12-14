@@ -65,7 +65,7 @@ And to receive messages from NSQ
 [source,xml]
 ----
 <route>
-  <from uri="nsq:myTopic?servers=myserver:4161"/>
+  <from uri="nsq:myTopic?servers=myserver:4150"/>
   <to uri="bean:doSomething"/>
 </route>
 ----
