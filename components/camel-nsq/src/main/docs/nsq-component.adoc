@@ -72,6 +72,7 @@ And to receive messages from NSQ
 
 The server can be configured on the component level, for example if using Spring Boot in the `application.properties` file:
 
+
 [source,properties]
 ----
 camel.component.nsq.servers=myserver1:4161,my-second-server:4161
