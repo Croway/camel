@@ -40,7 +40,7 @@ public class AsyncCompletionServiceTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        executor = Executors.newFixedThreadPool(5);
+        executor = Executors.newVirtualThreadPerTaskExecutor();
         service = new AsyncCompletionService<>(executor, true);
     }
 

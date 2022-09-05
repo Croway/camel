@@ -210,7 +210,7 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>--add-opens java.base/java.util=ALL-UNNAMED</argLine>
+                            <argLine>--add-opens java.base/java.util=ALL-UNNAMED --enable-preview</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -36,7 +36,7 @@
         <compiler.fork>true</compiler.fork>
         <cxf.codegenplugin.forkmode>true</cxf.codegenplugin.forkmode>
         <cxf.codegen.jvmArgs/>
-        <camel.surefire.fork.vmargs>-XX:+ExitOnOutOfMemoryError</camel.surefire.fork.vmargs>
+        <camel.surefire.fork.vmargs>-XX:+ExitOnOutOfMemoryError --enable-preview</camel.surefire.fork.vmargs>
         <camel.surefire.forkCount>1</camel.surefire.forkCount>
         <camel.surefire.forkTimeout>600</camel.surefire.forkTimeout>
         <camel.surefire.reuseForks>true</camel.surefire.reuseForks>
@@ -4365,6 +4365,7 @@
                         <compilerArgs>
                             <!-- SB2 actuator endpoint requires MethodParameter metadata -->
                             <arg>-parameters</arg>
+                            <arg>--enable-preview</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>

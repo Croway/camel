@@ -40,7 +40,10 @@ public final class CamelThreadFactory implements ThreadFactory {
     @Override
     public Thread newThread(Runnable runnable) {
         String threadName = ThreadHelper.resolveThreadName(pattern, name);
-        Thread answer = new Thread(runnable, threadName);
+        // Thread answer = new Thread(runnable, threadName);
+        Thread answer = Thread.ofVirtual().factory()
+                .newThread(runnable);
+        answer.setName(threadName);
         answer.setDaemon(daemon);
 
         LOG.trace("Created thread[{}] -> {}", threadName, answer);

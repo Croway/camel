@@ -57,7 +57,7 @@ public class DefaultThreadPoolFactory extends ServiceSupport implements CamelCon
 
     @Override
     public ExecutorService newCachedThreadPool(ThreadFactory threadFactory) {
-        return Executors.newCachedThreadPool(threadFactory);
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 
     @Override
@@ -114,7 +114,7 @@ public class DefaultThreadPoolFactory extends ServiceSupport implements CamelCon
             rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
         }
         answer.setRejectedExecutionHandler(rejectedExecutionHandler);
-        return answer;
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 
     @Override
