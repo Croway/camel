@@ -17,8 +17,51 @@
 package org.apache.camel.test.infra.microprofile.lra.services;
 
 import org.apache.camel.test.infra.common.services.SimpleTestServiceBuilder;
+import org.apache.camel.test.infra.common.services.SingletonService;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 public final class MicroprofileLRAServiceFactory {
+
+    static class SingletonMicroprofileLRAService extends SingletonService<MicroprofileLRAService>
+            implements MicroprofileLRAService {
+        public SingletonMicroprofileLRAService(MicroprofileLRAService service, String name) {
+            super(service, name);
+        }
+
+        @Override
+        public String host() {
+            return getService().host();
+        }
+
+        @Override
+        public int port() {
+            return getService().port();
+        }
+
+        @Override
+        public String callbackHost() {
+            return getService().callbackHost();
+        }
+
+        @Override
+        public String getServiceAddress() {
+            return getService().getServiceAddress();
+        }
+
+        @Override
+        public void beforeAll(ExtensionContext extensionContext) {
+            addToStore(extensionContext);
+        }
+
+        @Override
+        public void afterAll(ExtensionContext extensionContext) {
+            // NO-OP
+        }
+    }
+
+    private static SimpleTestServiceBuilder<MicroprofileLRAService> instance;
+    private static MicroprofileLRAService service;
+
     private MicroprofileLRAServiceFactory() {
 
     }
@@ -32,5 +75,21 @@ public final class MicroprofileLRAServiceFactory {
                 .addLocalMapping(MicroprofileLRALocalContainerService::new)
                 .addRemoteMapping(MicroprofileLRARemoteService::new)
                 .build();
+    }
+
+    public static synchronized MicroprofileLRAService createSingletonService() {
+        if (service == null) {
+            if (instance == null) {
+                instance = builder();
+
+                instance.addLocalMapping(() -> new SingletonMicroprofileLRAService(
+                        new MicroprofileLRALocalContainerService(), "microprofile-lra"))
+                        .addRemoteMapping(MicroprofileLRARemoteService::new);
+            }
+
+            service = instance.build();
+        }
+
+        return service;
     }
 }

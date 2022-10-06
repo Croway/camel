@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public abstract class AbstractLRATestSupport extends CamelTestSupport {
 
     @RegisterExtension
-    static MicroprofileLRAService service = MicroprofileLRAServiceFactory.createService();
+    static MicroprofileLRAService service = MicroprofileLRAServiceFactory.createSingletonService();
 
     private Integer serverPort;
 
