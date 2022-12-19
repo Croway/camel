@@ -16,64 +16,50 @@
  */
 package org.apache.camel.component.amqp;
 
+import static org.apache.camel.component.amqp.AMQPConnectionDetails.AMQP_PORT;
+import static org.apache.camel.component.amqp.AMQPConnectionDetails.discoverAMQP;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.AvailablePortFinder;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedService;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedServiceBuilder;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+import org.apache.camel.test.infra.artemis.services.ArtemisServiceFactory;
 import org.apache.camel.test.junit5.CamelTestSupport;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.apache.camel.component.amqp.AMQPConnectionDetails.AMQP_PORT;
-import static org.apache.camel.component.amqp.AMQPConnectionDetails.discoverAMQP;
+public class AMQPToDTest extends AMQPTestSupport {
 
-public class AMQPToDTest extends CamelTestSupport {
+	@Test
+	public void testToD() throws Exception {
+		getMockEndpoint("mock:bar").expectedBodiesReceived("Hello bar");
+		getMockEndpoint("mock:beer").expectedBodiesReceived("Hello beer");
 
-    static int amqpPort = AvailablePortFinder.getNextAvailable();
+		template.sendBodyAndHeader("direct:start", "Hello bar", "where", "bar");
+		template.sendBodyAndHeader("direct:start", "Hello beer", "where", "beer");
 
-    @RegisterExtension
-    public static ActiveMQEmbeddedService service = ActiveMQEmbeddedServiceBuilder
-            .defaultBroker()
-            .withAmqpTransport(amqpPort)
-            .build();
+		MockEndpoint.assertIsSatisfied(context);
+	}
 
-    @BeforeAll
-    public static void beforeClass() {
-        System.setProperty(AMQP_PORT, amqpPort + "");
-    }
+	@Override
+	protected CamelContext createCamelContext() throws Exception {
+		CamelContext camelContext = super.createCamelContext();
+		camelContext.getRegistry().bind("amqpConnection", discoverAMQP(camelContext));
+		return camelContext;
+	}
 
-    @Test
-    public void testToD() throws Exception {
-        getMockEndpoint("mock:bar").expectedBodiesReceived("Hello bar");
-        getMockEndpoint("mock:beer").expectedBodiesReceived("Hello beer");
+	@Override
+	protected RouteBuilder createRouteBuilder() {
+		return new RouteBuilder() {
+			public void configure() {
+				// route message dynamic using toD
+				from("direct:start").toD("amqp:queue:${header.where}");
 
-        template.sendBodyAndHeader("direct:start", "Hello bar", "where", "bar");
-        template.sendBodyAndHeader("direct:start", "Hello beer", "where", "beer");
-
-        MockEndpoint.assertIsSatisfied(context);
-    }
-
-    @Override
-    protected CamelContext createCamelContext() throws Exception {
-        CamelContext camelContext = super.createCamelContext();
-        camelContext.getRegistry().bind("amqpConnection", discoverAMQP(camelContext));
-        return camelContext;
-    }
-
-    @Override
-    protected RouteBuilder createRouteBuilder() {
-        return new RouteBuilder() {
-            public void configure() {
-                // route message dynamic using toD
-                from("direct:start").toD("amqp:queue:${header.where}");
-
-                from("amqp:queue:bar").to("mock:bar");
-                from("amqp:queue:beer").to("mock:beer");
-            }
-        };
-    }
-
+				from("amqp:queue:bar").to("mock:bar");
+				from("amqp:queue:beer").to("mock:beer");
+			}
+		};
+	}
 }

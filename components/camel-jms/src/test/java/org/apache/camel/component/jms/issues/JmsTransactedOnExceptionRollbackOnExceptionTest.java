@@ -17,16 +17,25 @@
 package org.apache.camel.component.jms.issues;
 
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
 
+import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
+import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jms.JmsComponent;
-import org.apache.camel.test.infra.activemq.common.ConnectionFactoryHelper;
 import org.apache.camel.test.infra.activemq.services.ActiveMQService;
 import org.apache.camel.test.infra.activemq.services.ActiveMQServiceFactory;
+import org.apache.camel.test.infra.artemis.common.ConnectionFactoryHelper;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+import org.apache.camel.test.infra.artemis.services.ArtemisServiceFactory;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Tags;
@@ -40,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tags({ @Tag("not-parallel"), @Tag("transaction") })
 public class JmsTransactedOnExceptionRollbackOnExceptionTest extends CamelTestSupport {
     @RegisterExtension
-    public static ActiveMQService service = ActiveMQServiceFactory.createVMServiceInstance();
+    public static ArtemisService service = ArtemisServiceFactory.createVMService();
 
     public static class BadErrorHandler {
 
@@ -70,10 +79,11 @@ public class JmsTransactedOnExceptionRollbackOnExceptionTest extends CamelTestSu
     }
 
     @Test
-    public void shouldNotLoseMessagesOnExceptionInErrorHandler() {
+    public void shouldNotLoseMessagesOnExceptionInErrorHandler() throws Exception {
         template.sendBody(testingEndpoint, "Hello World");
 
-        Object dlqBody = consumer.receiveBody("activemq:ActiveMQ.DLQ", 2000);
+        Object dlqBody = consumer.receiveBody("activemq:DLQ", 2000);
+
         assertEquals("Hello World", dlqBody);
     }
 

@@ -16,73 +16,59 @@
  */
 package org.apache.camel.component.amqp;
 
+import static org.apache.camel.component.amqp.AMQPComponent.amqpComponent;
+import static org.apache.camel.component.amqp.AMQPConnectionDetails.AMQP_PORT;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.AvailablePortFinder;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedService;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedServiceBuilder;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+import org.apache.camel.test.infra.artemis.services.ArtemisServiceFactory;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.apache.qpid.jms.JmsConnectionFactory;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.apache.camel.component.amqp.AMQPComponent.amqpComponent;
-import static org.apache.camel.component.amqp.AMQPConnectionDetails.AMQP_PORT;
+public class AMQPRouteTraceFrameTest extends AMQPTestSupport {
 
-public class AMQPRouteTraceFrameTest extends CamelTestSupport {
+	@EndpointInject("mock:result")
+	MockEndpoint resultEndpoint;
 
-    static int amqpPort = AvailablePortFinder.getNextAvailable();
+	String expectedBody = "Hello there!";
 
-    @RegisterExtension
-    public static ActiveMQEmbeddedService service = ActiveMQEmbeddedServiceBuilder
-            .defaultBroker()
-            .withAmqpTransport(amqpPort)
-            .build();
+	@Test
+	public void testTraceFrame() throws Exception {
+		resultEndpoint.expectedMessageCount(1);
+		resultEndpoint.message(0).header("cheese").isEqualTo(123);
+		template.sendBodyAndHeader("amqp-customized:queue:ping", expectedBody, "cheese", 123);
+		resultEndpoint.assertIsSatisfied();
+	}
 
-    @EndpointInject("mock:result")
-    MockEndpoint resultEndpoint;
+	@Override
+	protected CamelContext createCamelContext() throws Exception {
+		CamelContext camelContext = super.createCamelContext();
 
-    String expectedBody = "Hello there!";
+		JmsConnectionFactory connectionFactory
+				= new JmsConnectionFactory(service.serviceAddress() + "?amqp.traceFrames=true");
 
-    @BeforeAll
-    public static void beforeClass() {
-        System.setProperty(AMQP_PORT, amqpPort + "");
-    }
+		AMQPComponent amqp = amqpComponent(service.serviceAddress());
+		amqp.getConfiguration().setConnectionFactory(connectionFactory);
 
-    @Test
-    public void testTraceFrame() throws Exception {
-        resultEndpoint.expectedMessageCount(1);
-        resultEndpoint.message(0).header("cheese").isEqualTo(123);
-        template.sendBodyAndHeader("amqp-customized:queue:ping", expectedBody, "cheese", 123);
-        resultEndpoint.assertIsSatisfied();
-    }
+		camelContext.addComponent("amqp-customized", amqp);
+		return camelContext;
+	}
 
-    @Override
-    protected CamelContext createCamelContext() throws Exception {
-        CamelContext camelContext = super.createCamelContext();
-
-        JmsConnectionFactory connectionFactory
-                = new JmsConnectionFactory(service.serviceAddress() + "?amqp.traceFrames=true");
-
-        AMQPComponent amqp = amqpComponent(service.serviceAddress());
-        amqp.getConfiguration().setConnectionFactory(connectionFactory);
-
-        camelContext.addComponent("amqp-customized", amqp);
-        return camelContext;
-    }
-
-    @Override
-    protected RouteBuilder createRouteBuilder() {
-        return new RouteBuilder() {
-            public void configure() {
-                from("amqp-customized:queue:ping")
-                        .to("log:routing")
-                        .to("mock:result");
-            }
-        };
-    }
-
+	@Override
+	protected RouteBuilder createRouteBuilder() {
+		return new RouteBuilder() {
+			public void configure() {
+				from("amqp-customized:queue:ping")
+						.to("log:routing")
+						.to("mock:result");
+			}
+		};
+	}
 }

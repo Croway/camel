@@ -17,51 +17,52 @@
 
 package org.apache.camel.component.jms;
 
-import javax.jms.ConnectionFactory;
+import static org.apache.camel.component.jms.JmsComponent.jmsComponentAutoAcknowledge;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.test.infra.activemq.common.ConnectionFactoryHelper;
-import org.apache.camel.test.infra.activemq.services.ActiveMQService;
-import org.apache.camel.test.infra.activemq.services.ActiveMQServiceFactory;
+import org.apache.camel.test.infra.artemis.common.ConnectionFactoryHelper;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+import org.apache.camel.test.infra.artemis.services.ArtemisServiceFactory;
 import org.apache.camel.test.junit5.CamelTestSupport;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.apache.camel.component.jms.JmsComponent.jmsComponentAutoAcknowledge;
+import javax.jms.ConnectionFactory;
 
-@Tags({ @Tag("jms") })
+@Tags({@Tag("jms")})
 public abstract class AbstractJMSTest extends CamelTestSupport {
-    @RegisterExtension
-    public ActiveMQService service = ActiveMQServiceFactory.createVMService();
+	@RegisterExtension
+	public ArtemisService service = ArtemisServiceFactory.createVMService();
 
-    public static String queueNameForClass(String desiredName, Class<?> requestingClass) {
-        return desiredName + "." + requestingClass.getSimpleName();
-    }
+	public static String queueNameForClass(String desiredName, Class<?> requestingClass) {
+		return desiredName + "." + requestingClass.getSimpleName();
+	}
 
-    protected abstract String getComponentName();
+	protected abstract String getComponentName();
 
-    protected JmsComponent buildComponent(ConnectionFactory connectionFactory) {
-        return jmsComponentAutoAcknowledge(connectionFactory);
-    }
+	protected JmsComponent buildComponent(ConnectionFactory connectionFactory) {
+		return jmsComponentAutoAcknowledge(connectionFactory);
+	}
 
-    protected JmsComponent setupComponent(
-            CamelContext camelContext, ConnectionFactory connectionFactory, String componentName) {
-        return buildComponent(connectionFactory);
-    }
+	protected JmsComponent setupComponent(
+			CamelContext camelContext, ConnectionFactory connectionFactory, String componentName) {
+		return buildComponent(connectionFactory);
+	}
 
-    protected JmsComponent setupComponent(CamelContext camelContext, ActiveMQService service, String componentName) {
-        ConnectionFactory connectionFactory = ConnectionFactoryHelper.createConnectionFactory(service);
+	protected JmsComponent setupComponent(CamelContext camelContext, ArtemisService service, String componentName) {
+		ConnectionFactory connectionFactory = ConnectionFactoryHelper.createConnectionFactory(service);
 
-        return setupComponent(camelContext, connectionFactory, componentName);
-    }
+		return setupComponent(camelContext, connectionFactory, componentName);
+	}
 
-    @Override
-    protected CamelContext createCamelContext() throws Exception {
-        CamelContext camelContext = super.createCamelContext();
+	@Override
+	protected CamelContext createCamelContext() throws Exception {
+		CamelContext camelContext = super.createCamelContext();
 
-        JmsComponent component = setupComponent(camelContext, service, getComponentName());
-        camelContext.addComponent(getComponentName(), component);
-        return camelContext;
-    }
+		JmsComponent component = setupComponent(camelContext, service, getComponentName());
+		camelContext.addComponent(getComponentName(), component);
+		return camelContext;
+	}
 }

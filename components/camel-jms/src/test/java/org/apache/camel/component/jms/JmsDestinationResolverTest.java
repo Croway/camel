@@ -20,6 +20,8 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.infra.activemq.services.ActiveMQService;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+
 import org.junit.jupiter.api.Test;
 
 public class JmsDestinationResolverTest extends AbstractJMSTest {
@@ -43,7 +45,7 @@ public class JmsDestinationResolverTest extends AbstractJMSTest {
     }
 
     @Override
-    protected JmsComponent setupComponent(CamelContext camelContext, ActiveMQService service, String componentName) {
+    protected JmsComponent setupComponent(CamelContext camelContext, ArtemisService service, String componentName) {
         final JmsComponent component = super.setupComponent(camelContext, service, componentName);
 
         component.getConfiguration().setDestinationResolver(new MyDestinationResolver());
