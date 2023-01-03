@@ -22,6 +22,7 @@ import javax.jms.DeliveryMode;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,6 +116,7 @@ public class JmsRouteDeliveryModePreserveQoSTest extends AbstractPersistentJMSTe
         assertEquals(DeliveryMode.PERSISTENT, map.get("JMSDeliveryMode"));
     }
 
+    @Disabled("This test is valid only on ActiveMQ: on Artemis and others it fails because 3 is invalid")
     @Test
     public void testNonJmsDeliveryMode() throws InterruptedException {
         MockEndpoint mock = getMockEndpoint("mock:JmsRouteDeliveryModePreserveQoSTest.bar");
@@ -149,6 +151,7 @@ public class JmsRouteDeliveryModePreserveQoSTest extends AbstractPersistentJMSTe
         MockEndpoint.assertIsSatisfied(context);
     }
 
+    @Disabled("This test is valid only on ActiveMQ: on Artemis and others it fails because 3 is invalid")
     @Test
     public void testNonJmsDeliveryModePreserveQos() throws InterruptedException {
         MockEndpoint mock = getMockEndpoint("mock:JmsRouteDeliveryModePreserveQoSTest.bar");
@@ -157,7 +160,7 @@ public class JmsRouteDeliveryModePreserveQoSTest extends AbstractPersistentJMSTe
         // in this test, we can only pass if we are "preserving" existing deliveryMode.
         // this means camel expects to have an existing QoS set as a header, or it will pick
         // from the JMS message created by the message creator
-        // otherwise, "preserveMessageQos==true" does not allow us to explicity set the deliveryMode
+        // otherwise, "preserveMessageQos==true" does not allow us to explicitly set the deliveryMode
         // on the message
         mock.message(0).header("JMSDeliveryMode").isEqualTo(1);
 

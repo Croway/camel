@@ -21,10 +21,12 @@ import org.apache.camel.component.jms.AbstractJMSTest;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Disabled("This test does not work with Artemis")
 public class JmsInOutExclusiveTopicTest extends AbstractJMSTest {
 
     @BeforeEach

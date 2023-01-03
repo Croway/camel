@@ -22,9 +22,9 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.test.infra.activemq.services.ActiveMQService;
 import org.apache.camel.test.infra.artemis.services.ArtemisService;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -57,6 +57,7 @@ public class JmsInOutBeanReturnNullTest extends AbstractJMSTest {
 
     @SuppressWarnings("deprecated")
     @Test
+    @Disabled("This test does not work on Artemis")
     public void testReturnNullExchange() {
         Exchange reply
                 = template.request("activemq:queue:JmsInOutBeanReturnNullTest", exchange -> exchange.getIn().setBody("foo"));

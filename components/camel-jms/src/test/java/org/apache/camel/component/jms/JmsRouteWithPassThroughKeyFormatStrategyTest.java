@@ -16,9 +16,12 @@
  */
 package org.apache.camel.component.jms;
 
+import org.junit.jupiter.api.Disabled;
+
 /**
  * With the passthrough option
  */
+@Disabled("This test does not work with Artemis")
 public class JmsRouteWithPassThroughKeyFormatStrategyTest extends JmsRouteWithDefaultKeyFormatStrategyTest {
 
     @Override

@@ -19,10 +19,12 @@ package org.apache.camel.component.jms.issues;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jms.AbstractJMSTest;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Disabled("This test does not work with Artemis")
 public class JmsInOutExclusiveTopicRecipientListTest extends AbstractJMSTest {
 
     @Test

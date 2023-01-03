@@ -18,6 +18,7 @@ package org.apache.camel.component.jms;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.parallel.Isolated;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Timeout(30)
 @Isolated
+@Disabled("This test does not work with Artemis")
 public class JmsSelectorInTest extends AbstractJMSTest {
 
     @Test

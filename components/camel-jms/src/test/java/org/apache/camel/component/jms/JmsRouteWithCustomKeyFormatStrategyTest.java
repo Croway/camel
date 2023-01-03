@@ -19,10 +19,13 @@ package org.apache.camel.component.jms;
 import org.apache.camel.BindToRegistry;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.util.StringHelper;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * With the passthrough option
  */
+@Disabled("This test does not work with Artemis")
 public class JmsRouteWithCustomKeyFormatStrategyTest extends JmsRouteWithDefaultKeyFormatStrategyTest {
 
     @BindToRegistry("myJmsKeyStrategy")
