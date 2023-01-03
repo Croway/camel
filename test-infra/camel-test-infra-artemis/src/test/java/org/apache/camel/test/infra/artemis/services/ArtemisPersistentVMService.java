@@ -13,7 +13,8 @@ public class ArtemisPersistentVMService extends AbstractArtemisEmbeddedService {
 
 	@Override
 	protected Configuration getConfiguration(Configuration configuration, int port) {
-		brokerURL = "vm://0";
+		final int brokerId = super.BROKER_COUNT.intValue();
+		brokerURL = "vm://" + brokerId;
 
 		configuration.setPersistenceEnabled(true);
 		configuration.setJournalType(JournalType.NIO);

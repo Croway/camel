@@ -12,11 +12,12 @@ public class ArtemisVMService extends AbstractArtemisEmbeddedService {
 
 	@Override
 	protected Configuration getConfiguration(Configuration configuration, int port) {
-		brokerURL = "vm://0";
+		final int brokerId = super.BROKER_COUNT.intValue();
+		brokerURL = "vm://" + brokerId;
 
 		configuration.setPersistenceEnabled(false);
 		try {
-			configuration.addAcceptorConfiguration("in-vm", "vm://0");
+			configuration.addAcceptorConfiguration("in-vm", "vm://" + brokerId);
 		} catch (Exception e) {
 			LOG.warn(e.getMessage(), e);
 			fail("vm acceptor cannot be configured");

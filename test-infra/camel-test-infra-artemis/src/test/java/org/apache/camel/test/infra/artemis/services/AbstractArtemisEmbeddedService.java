@@ -2,14 +2,9 @@ package org.apache.camel.test.infra.artemis.services;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.apache.activemq.artemis.api.core.RoutingType;
-import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
-import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
-import org.apache.activemq.artemis.core.config.CoreQueueConfiguration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ;
-import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.camel.test.AvailablePortFinder;
 
 import org.apache.camel.test.infra.artemis.common.ConnectionFactoryHelper;
@@ -19,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import javax.jms.ConnectionFactory;
 
@@ -31,6 +27,7 @@ public abstract class AbstractArtemisEmbeddedService implements ArtemisService, 
 	protected EmbeddedActiveMQ embeddedBrokerService;
 
 	private Configuration artemisConfiguration;
+	protected static final LongAdder BROKER_COUNT = new LongAdder();
 
 	public AbstractArtemisEmbeddedService() {
 		embeddedBrokerService = new EmbeddedActiveMQ();
@@ -38,7 +35,8 @@ public abstract class AbstractArtemisEmbeddedService implements ArtemisService, 
 		// Base configuration
 		artemisConfiguration = new ConfigurationImpl();
 		artemisConfiguration.setSecurityEnabled(false);
-		artemisConfiguration.setBrokerInstance(new File("target/artemis"));
+		BROKER_COUNT.increment();
+		artemisConfiguration.setBrokerInstance(new File("target", "artemis-" + BROKER_COUNT.intValue()));
 		artemisConfiguration.setJMXManagementEnabled(false);
 
 		embeddedBrokerService.setConfiguration(getConfiguration(artemisConfiguration, AvailablePortFinder.getNextAvailable()));
