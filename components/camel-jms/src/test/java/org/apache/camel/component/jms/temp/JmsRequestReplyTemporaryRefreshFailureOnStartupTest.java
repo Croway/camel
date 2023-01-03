@@ -27,6 +27,8 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedService;
 import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedServiceBuilder;
+import org.apache.camel.test.infra.artemis.services.ArtemisService;
+import org.apache.camel.test.infra.artemis.services.ArtemisVMService;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Tags;
@@ -86,13 +88,7 @@ public class JmsRequestReplyTemporaryRefreshFailureOnStartupTest extends CamelTe
         Thread.sleep(recoveryInterval + 500L);
         String brokerUri = "vm://" + brokerName;
 
-        ActiveMQEmbeddedService service = ActiveMQEmbeddedServiceBuilder
-                .bare()
-                .withBrokerName(brokerName)
-                .withPersistent(false)
-                .withUseJmx(false)
-                .withTransport(brokerUri, 0)
-                .build();
+        ArtemisService service = new ArtemisVMService();
 
         service.initialize();
 

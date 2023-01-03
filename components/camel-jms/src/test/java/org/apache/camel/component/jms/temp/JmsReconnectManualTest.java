@@ -60,65 +60,65 @@ public class JmsReconnectManualTest {
     @Disabled("This test is disabled as the problem can currently not be reproduced using ActiveMQ.")
     @Test
     public void testRequestReply() throws Exception {
-        BrokerService broker = ActiveMQEmbeddedServiceBuilder
-                .bare()
-                .withPersistent(false)
-                .withTimeBeforePurgeTempDestinations(1000)
-                .withTcpTransport()
-                .build().getBrokerService();
-
-        DefaultCamelContext context = new DefaultCamelContext();
-        JmsComponent jmsComponent = new JmsComponent();
-
-        String brokerUrl = String.format("failover://(%s)?maxReconnectAttempts=1",
-                ActiveMQEmbeddedService.getBrokerUri(broker, 0));
-
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
-        connectionFactory.setBrokerURL(brokerUrl);
-
-        /**
-         * When using Tibco EMS the problem can be recreated. As the broker is external it has to be stopped and started
-         * by hand.
-         */
-        // TibjmsConnectionFactory connectionFactory = new TibjmsConnectionFactory();
-        // connectionFactory.setReconnAttemptCount(1);
-
-        jmsComponent.getConfiguration().setConnectionFactory(connectionFactory);
-        jmsComponent.getConfiguration().setRequestTimeout(1000);
-        jmsComponent.getConfiguration().setReceiveTimeout(1000);
-        context.addComponent("jms", jmsComponent);
-        context.addRoutes(new RouteBuilder() {
-
-            @Override
-            public void configure() {
-                from("jms:testqueue").bean(new EchoServiceImpl());
-                from("direct:test").to("jms:testqueue");
-            }
-        });
-        CamelBeanPostProcessor processor = new CamelBeanPostProcessor();
-        processor.setCamelContext(context);
-        processor.postProcessBeforeInitialization(this, "this");
-        context.start();
-
-        String ret = proxy.echo("test");
-        assertEquals("test", ret);
-
-        broker.stop();
-        /**
-         * Wait long enough for the jms client to do a full reconnect. In the Tibco EMS case this means that a Temporary
-         * Destination created before is invalid now
-         */
-        Thread.sleep(5000);
-
-        System.in.read();
-        broker.start(true);
-
-        /**
-         * Before the fix to this issue this call will throw a spring UncategorizedJmsException which contains an
-         * InvalidJmsDestination
-         */
-        String ret2 = proxy.echo("test");
-        assertEquals("test", ret2);
+//        BrokerService broker = ActiveMQEmbeddedServiceBuilder
+//                .bare()
+//                .withPersistent(false)
+//                .withTimeBeforePurgeTempDestinations(1000)
+//                .withTcpTransport()
+//                .build().getBrokerService();
+//
+//        DefaultCamelContext context = new DefaultCamelContext();
+//        JmsComponent jmsComponent = new JmsComponent();
+//
+//        String brokerUrl = String.format("failover://(%s)?maxReconnectAttempts=1",
+//                ActiveMQEmbeddedService.getBrokerUri(broker, 0));
+//
+//        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+//        connectionFactory.setBrokerURL(brokerUrl);
+//
+//        /**
+//         * When using Tibco EMS the problem can be recreated. As the broker is external it has to be stopped and started
+//         * by hand.
+//         */
+//        // TibjmsConnectionFactory connectionFactory = new TibjmsConnectionFactory();
+//        // connectionFactory.setReconnAttemptCount(1);
+//
+//        jmsComponent.getConfiguration().setConnectionFactory(connectionFactory);
+//        jmsComponent.getConfiguration().setRequestTimeout(1000);
+//        jmsComponent.getConfiguration().setReceiveTimeout(1000);
+//        context.addComponent("jms", jmsComponent);
+//        context.addRoutes(new RouteBuilder() {
+//
+//            @Override
+//            public void configure() {
+//                from("jms:testqueue").bean(new EchoServiceImpl());
+//                from("direct:test").to("jms:testqueue");
+//            }
+//        });
+//        CamelBeanPostProcessor processor = new CamelBeanPostProcessor();
+//        processor.setCamelContext(context);
+//        processor.postProcessBeforeInitialization(this, "this");
+//        context.start();
+//
+//        String ret = proxy.echo("test");
+//        assertEquals("test", ret);
+//
+//        broker.stop();
+//        /**
+//         * Wait long enough for the jms client to do a full reconnect. In the Tibco EMS case this means that a Temporary
+//         * Destination created before is invalid now
+//         */
+//        Thread.sleep(5000);
+//
+//        System.in.read();
+//        broker.start(true);
+//
+//        /**
+//         * Before the fix to this issue this call will throw a spring UncategorizedJmsException which contains an
+//         * InvalidJmsDestination
+//         */
+//        String ret2 = proxy.echo("test");
+//        assertEquals("test", ret2);
 
     }
 }
