@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 
 public class ArtemisPersistentVMService extends AbstractArtemisEmbeddedService {
@@ -15,6 +16,8 @@ public class ArtemisPersistentVMService extends AbstractArtemisEmbeddedService {
 		brokerURL = "vm://0";
 
 		configuration.setPersistenceEnabled(true);
+		configuration.setJournalType(JournalType.NIO);
+
 		try {
 			configuration.addAcceptorConfiguration("in-vm", brokerURL);
 		} catch (Exception e) {
