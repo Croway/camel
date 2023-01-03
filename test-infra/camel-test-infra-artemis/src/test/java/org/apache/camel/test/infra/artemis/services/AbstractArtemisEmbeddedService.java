@@ -12,13 +12,17 @@ import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.camel.test.AvailablePortFinder;
 
+import org.apache.camel.test.infra.artemis.common.ConnectionFactoryHelper;
+import org.apache.camel.test.infra.messaging.services.ConnectionFactoryAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractArtemisEmbeddedService implements ArtemisService {
+import javax.jms.ConnectionFactory;
+
+public abstract class AbstractArtemisEmbeddedService implements ArtemisService, ConnectionFactoryAware {
 
 	protected int tcpPort = AvailablePortFinder.getNextAvailable();
 
@@ -80,5 +84,15 @@ public abstract class AbstractArtemisEmbeddedService implements ArtemisService {
 
 	public EmbeddedActiveMQ getEmbeddedBrokerService() {
 		return embeddedBrokerService;
+	}
+
+	@Override
+	public ConnectionFactory createConnectionFactory() {
+		return ConnectionFactoryHelper.createConnectionFactory(this);
+	}
+
+	@Override
+	public ConnectionFactory createConnectionFactory(Integer maximumRedeliveries) {
+		return ConnectionFactoryHelper.createConnectionFactory(this, maximumRedeliveries);
 	}
 }

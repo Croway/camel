@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.camel.test.infra.activemq.services;
+package org.apache.camel.test.infra.messaging.services;
 
 import javax.jms.ConnectionFactory;
 
