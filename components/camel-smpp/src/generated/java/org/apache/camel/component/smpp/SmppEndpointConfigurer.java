@@ -57,6 +57,8 @@ public class SmppEndpointConfigurer extends PropertyConfigurerSupport implements
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "maxreconnect":
         case "maxReconnect": target.getConfiguration().setMaxReconnect(property(camelContext, int.class, value)); return true;
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": target.getConfiguration().setMessageReceiverRouteId(property(camelContext, java.lang.String.class, value)); return true;
         case "numberingplanindicator":
         case "numberingPlanIndicator": target.getConfiguration().setNumberingPlanIndicator(property(camelContext, byte.class, value)); return true;
         case "password": target.getConfiguration().setPassword(property(camelContext, java.lang.String.class, value)); return true;
@@ -143,6 +145,8 @@ public class SmppEndpointConfigurer extends PropertyConfigurerSupport implements
         case "lazyStartProducer": return boolean.class;
         case "maxreconnect":
         case "maxReconnect": return int.class;
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": return java.lang.String.class;
         case "numberingplanindicator":
         case "numberingPlanIndicator": return byte.class;
         case "password": return java.lang.String.class;
@@ -230,6 +234,8 @@ public class SmppEndpointConfigurer extends PropertyConfigurerSupport implements
         case "lazyStartProducer": return target.isLazyStartProducer();
         case "maxreconnect":
         case "maxReconnect": return target.getConfiguration().getMaxReconnect();
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": return target.getConfiguration().getMessageReceiverRouteId();
         case "numberingplanindicator":
         case "numberingPlanIndicator": return target.getConfiguration().getNumberingPlanIndicator();
         case "password": return target.getConfiguration().getPassword();

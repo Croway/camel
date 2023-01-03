@@ -63,6 +63,8 @@ public class SmppComponentConfigurer extends PropertyConfigurerSupport implement
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "maxreconnect":
         case "maxReconnect": getOrCreateConfiguration(target).setMaxReconnect(property(camelContext, int.class, value)); return true;
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": getOrCreateConfiguration(target).setMessageReceiverRouteId(property(camelContext, java.lang.String.class, value)); return true;
         case "numberingplanindicator":
         case "numberingPlanIndicator": getOrCreateConfiguration(target).setNumberingPlanIndicator(property(camelContext, byte.class, value)); return true;
         case "password": getOrCreateConfiguration(target).setPassword(property(camelContext, java.lang.String.class, value)); return true;
@@ -148,6 +150,8 @@ public class SmppComponentConfigurer extends PropertyConfigurerSupport implement
         case "lazyStartProducer": return boolean.class;
         case "maxreconnect":
         case "maxReconnect": return int.class;
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": return java.lang.String.class;
         case "numberingplanindicator":
         case "numberingPlanIndicator": return byte.class;
         case "password": return java.lang.String.class;
@@ -234,6 +238,8 @@ public class SmppComponentConfigurer extends PropertyConfigurerSupport implement
         case "lazyStartProducer": return target.isLazyStartProducer();
         case "maxreconnect":
         case "maxReconnect": return getOrCreateConfiguration(target).getMaxReconnect();
+        case "messagereceiverrouteid":
+        case "messageReceiverRouteId": return getOrCreateConfiguration(target).getMessageReceiverRouteId();
         case "numberingplanindicator":
         case "numberingPlanIndicator": return getOrCreateConfiguration(target).getNumberingPlanIndicator();
         case "password": return getOrCreateConfiguration(target).getPassword();
