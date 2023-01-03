@@ -19,7 +19,6 @@ package org.apache.camel.component.amqp;
 import java.util.Map;
 
 import jakarta.jms.Message;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.component.jms.JmsBinding;
 import org.apache.camel.component.jms.JmsEndpoint;

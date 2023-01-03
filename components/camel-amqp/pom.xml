@@ -87,19 +87,6 @@
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>artemis-server</artifactId>
-            <version>${activemq-artemis-version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>artemis-amqp-protocol</artifactId>
-            <version>${activemq-artemis-version}</version>
-            <scope>test</scope>
-        </dependency>
         
         <dependency>
             <groupId>org.apache.camel</groupId>
@@ -112,8 +99,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <testSourceDirectory>src/test/dummy</testSourceDirectory>
-    </build>
 </project>

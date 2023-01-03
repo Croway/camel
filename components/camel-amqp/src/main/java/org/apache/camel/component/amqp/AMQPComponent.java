@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 
 import jakarta.jms.ConnectionFactory;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.component.jms.JmsComponent;

@@ -24,45 +24,25 @@ import jakarta.jms.JMSException;
 import jakarta.jms.MessageProducer;
 import jakarta.jms.Session;
 import jakarta.jms.TextMessage;
-
 import org.apache.camel.CamelContext;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.AvailablePortFinder;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedService;
-import org.apache.camel.test.infra.activemq.services.ActiveMQEmbeddedServiceBuilder;
-import org.apache.camel.test.junit5.CamelTestSupport;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.apache.camel.component.amqp.AMQPComponent.amqpComponent;
 import static org.apache.camel.component.amqp.AMQPConnectionDetails.discoverAMQP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AMQPRouteTest extends CamelTestSupport {
-
-    static int amqpPort = AvailablePortFinder.getNextAvailable();
-
-    @RegisterExtension
-    public ActiveMQEmbeddedService service = ActiveMQEmbeddedServiceBuilder
-            .defaultBroker()
-            .withAmqpTransport(amqpPort)
-            .build();
+public class AMQPRouteTest extends AMQPTestSupport {
 
     @EndpointInject("mock:result")
     MockEndpoint resultEndpoint;
 
     String expectedBody = "Hello there!";
-
-    @BeforeAll
-    public static void beforeClass() {
-        System.setProperty(AMQPConnectionDetails.AMQP_PORT, amqpPort + "");
-    }
 
     @Test
     public void testJmsQueue() throws Exception {
@@ -196,5 +176,4 @@ public class AMQPRouteTest extends CamelTestSupport {
             }
         };
     }
-
 }
