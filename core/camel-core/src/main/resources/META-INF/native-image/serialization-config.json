@@ -1,0 +1,23 @@
+{
+  "types":[
+    {
+      "name":"java.lang.String"
+    },
+    {
+      "name":"java.lang.String$CaseInsensitiveComparator"
+    },
+    {
+      "name":"java.util.TreeMap"
+    },
+    {
+      "name":"org.apache.camel.util.CaseInsensitiveMap"
+    },
+    {
+      "name":"org.apache.camel.util.xml.StringSource"
+    }
+  ],
+  "lambdaCapturingTypes":[
+  ],
+  "proxies":[
+  ]
+}
