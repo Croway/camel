@@ -137,6 +137,9 @@ abstract class ExportBaseCommand extends CamelCommand {
                         description = "Will be quiet, only print when error occurs")
     boolean quiet;
 
+    @CommandLine.Option(names = { "--additional-properties" }, description = "Additional maven/gradle properties, ex. --properties=prop1=foo,prop2=bar")
+    protected String additionalProperties;
+
     public ExportBaseCommand(CamelJBangMain main) {
         super(main);
     }
