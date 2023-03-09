@@ -52,6 +52,7 @@
         <dependency>
             <groupId>io.apicurio</groupId>
             <artifactId>apicurio-data-models</artifactId>
+            <version>${apicurio-version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -73,6 +74,7 @@
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
+            <version>${jakarta-annotation-api-version}</version>
         </dependency>
 
         <!-- test -->

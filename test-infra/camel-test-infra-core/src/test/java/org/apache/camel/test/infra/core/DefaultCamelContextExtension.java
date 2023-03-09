@@ -24,9 +24,7 @@ import org.apache.camel.NoSuchEndpointException;
 import org.apache.camel.Produce;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.test.infra.core.annotations.ContextFixture;
-import org.apache.camel.test.infra.core.annotations.ContextProvider;
 import org.apache.camel.test.infra.core.annotations.RouteFixture;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
@@ -35,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A simple Camel context extension suitable for most of the simple use cases in Camel and end-user applications.
  */
-public class DefaultCamelContextExtension implements CamelContextExtension {
+public class DefaultCamelContextExtension extends AbstractCamelContextExtension {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultCamelContextExtension.class);
     private final ContextLifeCycleManager lifeCycleManager;
     private final AnnotationProcessor fixtureProcessor;
@@ -59,10 +57,8 @@ public class DefaultCamelContextExtension implements CamelContextExtension {
     public DefaultCamelContextExtension(ContextLifeCycleManager lifeCycleManager) {
         this.lifeCycleManager = lifeCycleManager;
         this.fixtureProcessor = new DefaultAnnotationProcessor(this);
-    }
 
-    protected CamelContext createCamelContext() {
-        return new DefaultCamelContext();
+        LOG.warn("Creating a new extension: {}", this);
     }
 
     @Override
@@ -72,10 +68,7 @@ public class DefaultCamelContextExtension implements CamelContextExtension {
 
     @Override
     public void beforeAll(ExtensionContext extensionContext) throws Exception {
-        context = fixtureProcessor.setupContextProvider(extensionContext, ContextProvider.class, CamelContext.class);
-        if (context == null) {
-            context = createCamelContext();
-        }
+        context = createCamelContext(fixtureProcessor, extensionContext);
 
         producerTemplate = context.createProducerTemplate();
         producerTemplate.start();
@@ -100,6 +93,8 @@ public class DefaultCamelContextExtension implements CamelContextExtension {
         if (!context.isStarted()) {
             fixtureProcessor.evalMethod(extensionContext, ContextFixture.class, o, context);
             fixtureProcessor.evalMethod(extensionContext, RouteFixture.class, o, context);
+
+            setupBeanPostProcessors(context, o);
 
             lifeCycleManager.beforeEach(context);
         }

@@ -33,6 +33,7 @@ import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.dsl.jbang.core.commands.CamelCommand;
 import org.apache.camel.dsl.jbang.core.commands.CamelJBangMain;
 import org.apache.camel.dsl.jbang.core.common.CatalogLoader;
+import org.apache.camel.dsl.jbang.core.common.RuntimeCompletionCandidates;
 import org.apache.camel.main.download.MavenGav;
 import org.apache.camel.main.util.SuggestSimilarHelper;
 import org.apache.camel.tooling.model.BaseOptionModel;
@@ -58,7 +59,8 @@ public class CatalogDoc extends CamelCommand {
                         description = "To run using a different Camel version than the default version.")
     String camelVersion;
 
-    @CommandLine.Option(names = { "--runtime" }, description = "Runtime (spring-boot, quarkus, or camel-main)")
+    @CommandLine.Option(names = { "--runtime" }, completionCandidates = RuntimeCompletionCandidates.class,
+                        description = "Runtime (spring-boot, quarkus, or camel-main)")
     String runtime;
 
     @CommandLine.Option(names = { "--repos" },
@@ -84,7 +86,7 @@ public class CatalogDoc extends CamelCommand {
     boolean headers;
 
     @CommandLine.Option(names = {
-            "--kamelets-version" }, description = "Apache Camel Kamelets version", defaultValue = "3.20.1.1")
+            "--kamelets-version" }, description = "Apache Camel Kamelets version", defaultValue = "3.20.2")
     String kameletsVersion;
 
     CamelCatalog catalog;

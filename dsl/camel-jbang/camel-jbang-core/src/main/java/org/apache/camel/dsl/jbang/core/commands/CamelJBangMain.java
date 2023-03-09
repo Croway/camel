@@ -40,6 +40,11 @@ import org.apache.camel.dsl.jbang.core.commands.catalog.CatalogDoc;
 import org.apache.camel.dsl.jbang.core.commands.catalog.CatalogKamelet;
 import org.apache.camel.dsl.jbang.core.commands.catalog.CatalogLanguage;
 import org.apache.camel.dsl.jbang.core.commands.catalog.CatalogOther;
+import org.apache.camel.dsl.jbang.core.commands.config.ConfigCommand;
+import org.apache.camel.dsl.jbang.core.commands.config.ConfigGet;
+import org.apache.camel.dsl.jbang.core.commands.config.ConfigList;
+import org.apache.camel.dsl.jbang.core.commands.config.ConfigSet;
+import org.apache.camel.dsl.jbang.core.commands.config.ConfigUnset;
 import org.apache.camel.dsl.jbang.core.commands.process.CamelContextStatus;
 import org.apache.camel.dsl.jbang.core.commands.process.CamelContextTop;
 import org.apache.camel.dsl.jbang.core.commands.process.CamelCount;
@@ -62,6 +67,7 @@ import org.apache.camel.dsl.jbang.core.commands.process.ListProcess;
 import org.apache.camel.dsl.jbang.core.commands.process.ListService;
 import org.apache.camel.dsl.jbang.core.commands.process.ListVault;
 import org.apache.camel.dsl.jbang.core.commands.process.StopProcess;
+import org.apache.camel.dsl.jbang.core.common.CommandLineHelper;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -124,7 +130,12 @@ public class CamelJBangMain implements Callable<Integer> {
                 .addSubcommand("bind", new CommandLine(new Bind(main)))
                 .addSubcommand("pipe", new CommandLine(new Pipe(main)))
                 .addSubcommand("export", new CommandLine(new Export(main)))
-                .addSubcommand("completion", new CommandLine(new Complete(main)));
+                .addSubcommand("completion", new CommandLine(new Complete(main)))
+                .addSubcommand("config", new CommandLine(new ConfigCommand(main))
+                        .addSubcommand("list", new CommandLine(new ConfigList(main)))
+                        .addSubcommand("get", new CommandLine(new ConfigGet(main)))
+                        .addSubcommand("unset", new CommandLine(new ConfigUnset(main)))
+                        .addSubcommand("set", new CommandLine(new ConfigSet(main))));
 
         commandLine.getCommandSpec().versionProvider(() -> {
             CamelCatalog catalog = new DefaultCamelCatalog();
@@ -132,6 +143,7 @@ public class CamelJBangMain implements Callable<Integer> {
             return new String[] { v };
         });
 
+        CommandLineHelper.augmentWithUserConfiguration(commandLine, args);
         int exitCode = commandLine.execute(args);
         System.exit(exitCode);
     }

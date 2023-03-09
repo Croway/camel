@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.camel.catalog.DefaultCamelCatalog;
+import org.apache.camel.dsl.jbang.core.common.RuntimeCompletionCandidates;
 import org.apache.camel.dsl.jbang.core.common.RuntimeUtil;
 import org.apache.camel.main.download.MavenGav;
 import org.apache.camel.util.CamelCaseOrderedProperties;
@@ -72,7 +73,8 @@ abstract class ExportBaseCommand extends CamelCommand {
             "--dep", "--deps" }, description = "Add additional dependencies (Use commas to separate multiple dependencies).")
     protected String dependencies;
 
-    @CommandLine.Option(names = { "--runtime" }, description = "Runtime (spring-boot, quarkus, or camel-main)")
+    @CommandLine.Option(names = { "--runtime" }, completionCandidates = RuntimeCompletionCandidates.class,
+                        description = "Runtime (spring-boot, quarkus, or camel-main)")
     protected String runtime;
 
     @CommandLine.Option(names = { "--gav" }, description = "The Maven group:artifact:version")
@@ -87,7 +89,7 @@ abstract class ExportBaseCommand extends CamelCommand {
     protected String javaVersion;
 
     @CommandLine.Option(names = {
-            "--kamelets-version" }, description = "Apache Camel Kamelets version", defaultValue = "3.20.1.1")
+            "--kamelets-version" }, description = "Apache Camel Kamelets version", defaultValue = "3.20.2")
     protected String kameletsVersion;
 
     @CommandLine.Option(names = { "--local-kamelet-dir" },

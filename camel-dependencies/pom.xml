@@ -73,7 +73,7 @@
         <avro-ipc-jetty-version>1.11.1</avro-ipc-jetty-version>
         <avro-ipc-netty-version>1.11.1</avro-ipc-netty-version>
         <awaitility-version>4.2.0</awaitility-version>
-        <aws-java-sdk2-version>2.20.18</aws-java-sdk2-version>
+        <aws-java-sdk2-version>2.20.20</aws-java-sdk2-version>
         <aws-xray-version>2.6.1</aws-xray-version>
         <axiom-version>1.2.14</axiom-version>
         <azure-sdk-bom-version>1.2.9</azure-sdk-bom-version>
@@ -175,7 +175,7 @@
         <jakarta-json-bind-api-version>3.0.0</jakarta-json-bind-api-version>
         <jakarta-transaction-api-version>2.0.1</jakarta-transaction-api-version>
         <jakarta-jws-api-version>3.0.0</jakarta-jws-api-version>
-        <gmavenplus-plugin-version>1.13.1</gmavenplus-plugin-version>
+        <gmavenplus-plugin-version>2.1.0</gmavenplus-plugin-version>
         <google-auth-library-oauth2-http-version>1.7.0</google-auth-library-oauth2-http-version>
         <google-api-client-version>1.35.2</google-api-client-version>
         <google-api-services-drive-version>v2-rev20220110-1.32.1</google-api-services-drive-version>
@@ -207,7 +207,7 @@
         <hamcrest-version>2.2</hamcrest-version>
         <hapi-version>2.3</hapi-version>
         <hapi-base-version>2.3</hapi-base-version>
-        <hapi-fhir-version>6.2.4</hapi-fhir-version>
+        <hapi-fhir-version>6.4.2</hapi-fhir-version>
         <hawtbuf-version>1.11</hawtbuf-version>
         <hawtdispatch-version>1.22</hawtdispatch-version>
         <hazelcast-version>5.2.1</hazelcast-version>
@@ -318,9 +318,8 @@
         <jython-version>2.7.3</jython-version>
         <jython-standalone-version>2.7.3</jython-standalone-version>
         <jzlib-version>1.1.3</jzlib-version>
-	<kafka-version>3.2.3</kafka-version>
-	<kafka-debezium-version>3.3.1</kafka-debezium-version>
-        <kafka-vertx-version>2.8.2</kafka-vertx-version>
+        <kafka-version>3.4.0</kafka-version>
+        <kafka-debezium-version>3.3.1</kafka-debezium-version>
         <kotlin-version>1.8.0</kotlin-version>
         <kubernetes-client-version>6.4.1</kubernetes-client-version>
         <kubernetes-model-version>6.4.1</kubernetes-model-version>
@@ -359,7 +358,7 @@
         <maven-resolver-version>1.9.5</maven-resolver-version>
         <maven-shade-plugin-version>3.4.1</maven-shade-plugin-version>
         <maven-shared-utils-plugin-version>3.3.4</maven-shared-utils-plugin-version>
-        <maven-surefire-report-plugin-version>3.0.0-M8</maven-surefire-report-plugin-version>
+        <maven-surefire-report-plugin-version>3.0.0-M9</maven-surefire-report-plugin-version>
         <maven-wagon-version>3.5.2</maven-wagon-version>
         <maven-war-plugin-version>3.3.1</maven-war-plugin-version>
         <metrics-version>4.2.17</metrics-version>
@@ -453,7 +452,7 @@
         <solr-zookeeper-version>3.6.2</solr-zookeeper-version>
         <spark-version>3.3.1</spark-version>
         <splunk-version>1.9.0_1</splunk-version>
-        <spock-version>2.1-groovy-3.0</spock-version>
+        <spock-version>2.3-groovy-4.0</spock-version>
         <spring-batch-version>4.3.8</spring-batch-version>
         <spring-data-redis-version>2.6.2</spring-data-redis-version>
         <spring-ldap-version>2.4.1</spring-ldap-version>
@@ -477,7 +476,7 @@
         <tika-version>2.7.0</tika-version>
         <twilio-version>9.2.3</twilio-version>
         <twitter4j-version>4.0.7</twitter4j-version>
-        <undertow-version>2.3.3.Final</undertow-version>
+        <undertow-version>2.3.4.Final</undertow-version>
         <univocity-parsers-version>2.9.1</univocity-parsers-version>
         <validation-api-version>2.0.1.Final</validation-api-version>
         <vavr-version>0.10.2</vavr-version>
