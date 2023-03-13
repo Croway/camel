@@ -20,9 +20,7 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Endpoint;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.ResourceLock;
 
-@ResourceLock("VmComponent")
 public class StubShadowTest extends ContextTestSupport {
 
     @Override

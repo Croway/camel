@@ -24,6 +24,7 @@ The following components has been removed:
 | camel-atmos                          | none
 | camel-caffeine-lrucache              | camel-cache, camel-ignite, camel-infinispan
 | camel-cdi                            | camel-spring-boot, camel-quarkus
+| camel-directvm                       | camel-direct
 | camel-elasticsearch-rest             | camel-elasticsearch
 | camel-gora                           | none
 | camel-hbase                          | none
@@ -47,6 +48,7 @@ The following components has been removed:
 | camel-websocket                      | camel-vertx-websocket
 | camel-websocket-jsr356               | camel-vertx-websocket
 | camel-vertx-kafka                    | camel-kafka
+| camel-vm                             | camel-seda
 | camel-xstream                        | camel-jacksonxml
 | camel-zipkin                         | camel-micrometer, camel-opentelemtry
 |===

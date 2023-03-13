@@ -1067,20 +1067,6 @@ public interface ComponentsBuilderFactory {
         return org.apache.camel.builder.component.dsl.DirectComponentBuilderFactory.direct();
     }
     /**
-     * Direct VM (camel-directvm)
-     * Call another endpoint from any Camel Context in the same JVM
-     * synchronously.
-     * 
-     * Category: core,endpoint
-     * Since: 2.10
-     * Maven coordinates: org.apache.camel:camel-directvm
-     * 
-     * @return the dsl builder
-     */
-    static org.apache.camel.builder.component.dsl.DirectVmComponentBuilderFactory.DirectVmComponentBuilder directVm() {
-        return org.apache.camel.builder.component.dsl.DirectVmComponentBuilderFactory.directVm();
-    }
-    /**
      * Disruptor (camel-disruptor)
      * Provides asynchronous SEDA behavior using LMAX Disruptor.
      * 
@@ -4148,19 +4134,6 @@ public interface ComponentsBuilderFactory {
      */
     static org.apache.camel.builder.component.dsl.VertxWebsocketComponentBuilderFactory.VertxWebsocketComponentBuilder vertxWebsocket() {
         return org.apache.camel.builder.component.dsl.VertxWebsocketComponentBuilderFactory.vertxWebsocket();
-    }
-    /**
-     * VM (camel-vm)
-     * Call another endpoint in the same CamelContext asynchronously.
-     * 
-     * Category: core,endpoint
-     * Since: 1.1
-     * Maven coordinates: org.apache.camel:camel-vm
-     * 
-     * @return the dsl builder
-     */
-    static org.apache.camel.builder.component.dsl.VmComponentBuilderFactory.VmComponentBuilder vm() {
-        return org.apache.camel.builder.component.dsl.VmComponentBuilderFactory.vm();
     }
     /**
      * Weather (camel-weather)
