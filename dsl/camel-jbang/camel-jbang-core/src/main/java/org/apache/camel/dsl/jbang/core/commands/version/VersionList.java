@@ -16,24 +16,32 @@
  */
 package org.apache.camel.dsl.jbang.core.commands.version;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import com.github.freva.asciitable.AsciiTable;
 import com.github.freva.asciitable.Column;
 import com.github.freva.asciitable.HorizontalAlign;
+import org.apache.camel.catalog.CamelCatalog;
+import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.dsl.jbang.core.commands.CamelCommand;
 import org.apache.camel.dsl.jbang.core.commands.CamelJBangMain;
 import org.apache.camel.dsl.jbang.core.common.RuntimeCompletionCandidates;
 import org.apache.camel.dsl.jbang.core.common.VersionHelper;
 import org.apache.camel.main.KameletMain;
 import org.apache.camel.main.download.MavenDependencyDownloader;
+import org.apache.camel.tooling.model.ReleaseModel;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "list", description = "Displays available Camel versions")
 public class VersionList extends CamelCommand {
+
+    private static final String YYYY_MM_DD = "yyyy-MM-dd";
 
     @CommandLine.Option(names = { "--sort" },
                         description = "Sort by version", defaultValue = "version")
@@ -47,8 +55,11 @@ public class VersionList extends CamelCommand {
                         description = "Minimum Camel version to avoid resolving too old releases", defaultValue = "3.14.0")
     String minimumVersion = "3.14.0";
 
-    @CommandLine.Option(names = { "--repo", "--repos" }, description = "Maven repository for downloading available versions")
+    @CommandLine.Option(names = { "--repo" }, description = "Maven repository for downloading available versions")
     String repo;
+
+    @CommandLine.Option(names = { "--lts" }, description = "Only show LTS supported releases")
+    boolean lts;
 
     @CommandLine.Option(names = { "--fresh" }, description = "Make sure we use fresh (i.e. non-cached) resources")
     boolean fresh;
@@ -90,24 +101,49 @@ public class VersionList extends CamelCommand {
             return 1;
         }
 
+        CamelCatalog catalog = new DefaultCamelCatalog();
+        List<ReleaseModel> releases = catalog.camelReleases();
+
         List<Row> rows = new ArrayList<>();
         for (String[] v : versions) {
             Row row = new Row();
             rows.add(row);
             row.coreVersion = v[0];
             row.runtimeVersion = v[1];
+
+            // enrich with details from catalog (if we can find any)
+            ReleaseModel rm = releases.stream().filter(r -> v[0].equals(r.getVersion())).findFirst().orElse(null);
+            if (rm != null) {
+                row.releaseDate = rm.getDate();
+                row.eolDate = rm.getEol();
+                row.jdks = rm.getJdk();
+                row.kind = rm.getKind();
+            }
+        }
+
+        if (lts) {
+            rows.removeIf(r -> !"lts".equalsIgnoreCase(r.kind));
         }
 
         // sort rows
         rows.sort(this::sortRow);
 
+        // camel-quarkus is not LTS and have its own release schedule
         System.out.println(AsciiTable.getTable(AsciiTable.NO_BORDERS, rows, Arrays.asList(
                 new Column().header("CAMEL VERSION")
                         .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.CENTER).with(r -> r.coreVersion),
                 new Column().header("QUARKUS").visible("quarkus".equalsIgnoreCase(runtime))
                         .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.CENTER).with(r -> r.runtimeVersion),
                 new Column().header("SPRING-BOOT").visible("spring-boot".equalsIgnoreCase(runtime))
-                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.CENTER).with(r -> r.runtimeVersion))));
+                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.CENTER).with(r -> r.runtimeVersion),
+                new Column().header("JDK")
+                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.RIGHT).with(this::jdkVersion),
+                new Column().header("KIND").visible(!"quarkus".equalsIgnoreCase(runtime))
+                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.CENTER).with(this::kind),
+                new Column().header("RELEASED").visible(!"quarkus".equalsIgnoreCase(runtime))
+                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.RIGHT).with(this::releaseDate),
+                new Column().header("SUPPORTED UNTIL").visible(!"quarkus".equalsIgnoreCase(runtime))
+                        .headerAlign(HorizontalAlign.CENTER).dataAlign(HorizontalAlign.RIGHT).with(this::eolDate))));
 
         return 0;
     }
@@ -127,6 +163,45 @@ public class VersionList extends CamelCommand {
         }
     }
 
+    private String jdkVersion(Row r) {
+        return r.jdks;
+    }
+
+    private String kind(Row r) {
+        if (r.kind != null) {
+            return r.kind.toUpperCase(Locale.ROOT);
+        }
+        return "";
+    }
+
+    private String releaseDate(Row r) {
+        try {
+            if (r.releaseDate != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat(YYYY_MM_DD);
+                Date d = sdf.parse(r.releaseDate);
+                SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM yyyy", Locale.US);
+                return sdf2.format(d);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return r.releaseDate != null ? r.releaseDate : "";
+    }
+
+    private String eolDate(Row r) {
+        try {
+            if (r.eolDate != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat(YYYY_MM_DD);
+                Date d = sdf.parse(r.eolDate);
+                SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM yyyy", Locale.US);
+                return sdf2.format(d);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return r.eolDate != null ? r.eolDate : "";
+    }
+
     private boolean acceptVersion(String version) {
         if (version == null) {
             return false;
@@ -137,6 +212,10 @@ public class VersionList extends CamelCommand {
     private static class Row {
         String coreVersion;
         String runtimeVersion;
+        String releaseDate;
+        String eolDate;
+        String kind;
+        String jdks;
     }
 
 }

@@ -17,9 +17,14 @@
 package org.apache.camel.dsl.jbang.core.commands;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 
+import org.apache.camel.dsl.jbang.core.common.CommandLineHelper;
 import org.apache.camel.dsl.jbang.core.common.RuntimeUtil;
 import picocli.CommandLine;
 import picocli.CommandLine.IParameterConsumer;
@@ -78,6 +83,24 @@ public abstract class CamelCommand implements Callable<Integer> {
             camelDir = new File(System.getProperty("user.home"), ".camel");
         }
         return new File(camelDir, pid + "-trace.json");
+    }
+
+    protected void printConfigurationValues(String header) {
+        final Properties configProperties = new Properties();
+        CommandLineHelper.loadProperties(properties -> configProperties.putAll(properties));
+        List<String> lines = new ArrayList<>();
+        spec.options().forEach(opt -> {
+            if (Arrays.stream(opt.names()).anyMatch(name ->
+            // name starts with --
+            configProperties.containsKey(name.substring(2)))) {
+                lines.add(String.format("    %s=%s",
+                        opt.longestName(), opt.getValue().toString()));
+            }
+        });
+        if (!lines.isEmpty()) {
+            System.out.println(header);
+            lines.forEach(System.out::println);
+        }
     }
 
     protected abstract static class ParameterConsumer<T> implements IParameterConsumer {

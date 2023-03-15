@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.dsl.jbang.core.common.RuntimeCompletionCandidates;
 import org.apache.camel.dsl.jbang.core.common.RuntimeUtil;
-import org.apache.camel.main.download.MavenGav;
+import org.apache.camel.tooling.maven.MavenGav;
 import org.apache.camel.util.CamelCaseOrderedProperties;
 import org.apache.camel.util.FileUtil;
 import org.apache.camel.util.IOHelper;
@@ -161,6 +161,8 @@ abstract class ExportBaseCommand extends CamelCommand {
         } else {
             RuntimeUtil.configureLog("off", false, false, false, true);
         }
+
+        printConfigurationValues("Exporting integration with the following configuration:");
         // export
         return export();
     }
