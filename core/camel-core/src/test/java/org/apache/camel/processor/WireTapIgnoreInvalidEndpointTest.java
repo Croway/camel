@@ -14,18 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.tracing.decorators;
+package org.apache.camel.processor;
 
-public class VmSpanDecorator extends AbstractInternalSpanDecorator {
+import org.apache.camel.ContextTestSupport;
+import org.apache.camel.builder.RouteBuilder;
+import org.junit.jupiter.api.Test;
 
-    @Override
-    public String getComponent() {
-        return "vm";
+/**
+ * Wire tap unit test
+ */
+public class WireTapIgnoreInvalidEndpointTest extends ContextTestSupport {
+
+    @Test
+    public void testIgnoreInvalid() throws Exception {
+        getMockEndpoint("mock:result").expectedMessageCount(1);
+
+        template.sendBody("direct:start", "Hello World");
+
+        assertMockEndpointsSatisfied();
     }
 
     @Override
-    public String getComponentClassName() {
-        return "org.apache.camel.component.vm.VmComponent";
+    protected RouteBuilder createRouteBuilder() {
+        return new RouteBuilder() {
+            public void configure() {
+                from("direct:start")
+                        .wireTap("xxx:invalid").ignoreInvalidEndpoint()
+                        .to("mock:result");
+            }
+        };
     }
-
 }
