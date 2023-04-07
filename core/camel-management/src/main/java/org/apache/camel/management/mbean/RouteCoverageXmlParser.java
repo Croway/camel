@@ -113,12 +113,13 @@ public final class RouteCoverageXmlParser {
                 if (id != null) {
                     try {
                         if ("route".equals(qName)) {
-                            ManagedRouteMBean route = camelContext.getExtension(ManagedCamelContext.class).getManagedRoute(id);
+                            ManagedRouteMBean route = camelContext.getCamelContextExtension()
+                                    .getContextPlugin(ManagedCamelContext.class).getManagedRoute(id);
                             if (route != null) {
                                 long total = route.getExchangesTotal();
-                                el.setAttribute("exchangesTotal", "" + total);
+                                el.setAttribute("exchangesTotal", Long.toString(total));
                                 long totalTime = route.getTotalProcessingTime();
-                                el.setAttribute("totalProcessingTime", "" + totalTime);
+                                el.setAttribute("totalProcessingTime", Long.toString(totalTime));
                             }
                         } else if ("from".equals(qName)) {
                             // grab statistics from the parent route as from would be the same
@@ -126,26 +127,28 @@ public final class RouteCoverageXmlParser {
                             if (parent != null) {
                                 String routeId = parent.getAttribute("id");
                                 ManagedRouteMBean route
-                                        = camelContext.getExtension(ManagedCamelContext.class).getManagedRoute(routeId);
+                                        = camelContext.getCamelContextExtension().getContextPlugin(ManagedCamelContext.class)
+                                                .getManagedRoute(routeId);
                                 if (route != null) {
                                     long total = route.getExchangesTotal();
-                                    el.setAttribute("exchangesTotal", "" + total);
+                                    el.setAttribute("exchangesTotal", Long.toString(total));
                                     long totalTime = route.getTotalProcessingTime();
-                                    el.setAttribute("totalProcessingTime", "" + totalTime);
+                                    el.setAttribute("totalProcessingTime", Long.toString(totalTime));
                                     // from is index-0
                                     el.setAttribute("index", "0");
                                 }
                             }
                         } else {
                             ManagedProcessorMBean processor
-                                    = camelContext.getExtension(ManagedCamelContext.class).getManagedProcessor(id);
+                                    = camelContext.getCamelContextExtension().getContextPlugin(ManagedCamelContext.class)
+                                            .getManagedProcessor(id);
                             if (processor != null) {
                                 long total = processor.getExchangesTotal();
-                                el.setAttribute("exchangesTotal", "" + total);
+                                el.setAttribute("exchangesTotal", Long.toString(total));
                                 long totalTime = processor.getTotalProcessingTime();
-                                el.setAttribute("totalProcessingTime", "" + totalTime);
+                                el.setAttribute("totalProcessingTime", Long.toString(totalTime));
                                 int index = processor.getIndex();
-                                el.setAttribute("index", "" + index);
+                                el.setAttribute("index", Integer.toString(index));
                             }
                         }
                     } catch (Exception e) {

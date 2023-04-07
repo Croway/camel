@@ -56,8 +56,15 @@ import org.apache.camel.main.injection.AnnotationDependencyInjection;
 import org.apache.camel.main.util.ExtraFilesClassLoader;
 import org.apache.camel.spi.CliConnector;
 import org.apache.camel.spi.CliConnectorFactory;
+import org.apache.camel.spi.ComponentResolver;
+import org.apache.camel.spi.DataFormatResolver;
+import org.apache.camel.spi.LanguageResolver;
 import org.apache.camel.spi.Registry;
+import org.apache.camel.spi.ResourceLoader;
+import org.apache.camel.spi.RoutesLoader;
+import org.apache.camel.spi.UriFactoryResolver;
 import org.apache.camel.startup.jfr.FlightRecorderStartupStepRecorder;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.service.ServiceHelper;
 
 /**
@@ -301,12 +308,11 @@ public class KameletMain extends MainCommandLineSupport {
     protected CamelContext createCamelContext() {
         // do not build/init camel context yet
         DefaultCamelContext answer = new DefaultCamelContext(false);
-        answer.setLogJvmUptime(true);
         if (download) {
             ClassLoader dynamicCL = createApplicationContextClassLoader();
             answer.setApplicationContextClassLoader(dynamicCL);
-            answer.getCamelContextExtension().getPackageScanClassResolver().addClassLoader(dynamicCL);
-            answer.getCamelContextExtension().getPackageScanResourceResolver().addClassLoader(dynamicCL);
+            PluginHelper.getPackageScanClassResolver(answer).addClassLoader(dynamicCL);
+            PluginHelper.getPackageScanResourceResolver(answer).addClassLoader(dynamicCL);
 
             KnownReposResolver known = new KnownReposResolver(camelContext);
             known.loadKnownDependencies();
@@ -356,7 +362,7 @@ public class KameletMain extends MainCommandLineSupport {
         if (!stub) {
             // setup cli-connector if not already done
             if (answer.hasService(CliConnector.class) == null) {
-                CliConnectorFactory ccf = answer.getCliConnectorFactory();
+                CliConnectorFactory ccf = answer.getCamelContextExtension().getContextPlugin(CliConnectorFactory.class);
                 if (ccf != null && ccf.isEnabled()) {
                     CliConnector connector = ccf.createConnector();
                     try {
@@ -441,11 +447,16 @@ public class KameletMain extends MainCommandLineSupport {
             answer.getCamelContextExtension().getRegistry().bind(DependencyDownloaderStrategy.class.getSimpleName(),
                     new DependencyDownloaderStrategy(answer));
             answer.setClassResolver(new DependencyDownloaderClassResolver(answer, known));
-            answer.getCamelContextExtension().setComponentResolver(new DependencyDownloaderComponentResolver(answer, stub));
-            answer.getCamelContextExtension().setUriFactoryResolver(new DependencyDownloaderUriFactoryResolver(answer));
-            answer.setDataFormatResolver(new DependencyDownloaderDataFormatResolver(answer));
-            answer.getCamelContextExtension().setLanguageResolver(new DependencyDownloaderLanguageResolver(answer));
-            answer.setResourceLoader(new DependencyDownloaderResourceLoader(answer));
+            answer.getCamelContextExtension().addContextPlugin(ComponentResolver.class,
+                    new DependencyDownloaderComponentResolver(answer, stub));
+            answer.getCamelContextExtension().addContextPlugin(UriFactoryResolver.class,
+                    new DependencyDownloaderUriFactoryResolver(answer));
+            answer.getCamelContextExtension().addContextPlugin(DataFormatResolver.class,
+                    new DependencyDownloaderDataFormatResolver(answer));
+            answer.getCamelContextExtension().addContextPlugin(LanguageResolver.class,
+                    new DependencyDownloaderLanguageResolver(answer));
+            answer.getCamelContextExtension().addContextPlugin(ResourceLoader.class,
+                    new DependencyDownloaderResourceLoader(answer));
             answer.setInjector(new KameletMainInjector(answer.getInjector(), stub));
             answer.addService(new DependencyDownloaderKamelet(answer));
             answer.getCamelContextExtension().getRegistry().bind(DownloadModelineParser.class.getSimpleName(),
@@ -520,7 +531,7 @@ public class KameletMain extends MainCommandLineSupport {
         if (download) {
             // use resolvers that can auto downloaded
             camelContext.getCamelContextExtension()
-                    .setRoutesLoader(new DependencyDownloaderRoutesLoader(camelContext));
+                    .addContextPlugin(RoutesLoader.class, new DependencyDownloaderRoutesLoader(camelContext));
         } else {
             super.configureRoutesLoader(camelContext);
         }

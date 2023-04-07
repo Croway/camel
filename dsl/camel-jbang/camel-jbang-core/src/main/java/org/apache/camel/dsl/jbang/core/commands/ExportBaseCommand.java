@@ -24,14 +24,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -69,6 +70,10 @@ abstract class ExportBaseCommand extends CamelCommand {
                         description = "Profile to use, which refers to loading properties file with the given profile name. By default application.properties is loaded.")
     protected String profile;
 
+    @CommandLine.Option(names = { "--repos" },
+                        description = "Additional maven repositories (Use commas to separate multiple repositories)")
+    protected String repos;
+
     @CommandLine.Option(names = {
             "--dep", "--deps" }, description = "Add additional dependencies (Use commas to separate multiple dependencies).")
     protected String dependencies;
@@ -88,6 +93,10 @@ abstract class ExportBaseCommand extends CamelCommand {
     @CommandLine.Option(names = { "--java-version" }, description = "Java version (11 or 17)", defaultValue = "11")
     protected String javaVersion;
 
+    @CommandLine.Option(names = { "--camel-version" },
+                        description = "To export using a different Camel version than the default version.")
+    protected String camelVersion;
+
     @CommandLine.Option(names = {
             "--kamelets-version" }, description = "Apache Camel Kamelets version", defaultValue = "3.20.2")
     protected String kameletsVersion;
@@ -97,7 +106,7 @@ abstract class ExportBaseCommand extends CamelCommand {
     protected String localKameletDir;
 
     @CommandLine.Option(names = { "--spring-boot-version" }, description = "Spring Boot version",
-                        defaultValue = "2.7.9")
+                        defaultValue = "2.7.10")
     protected String springBootVersion;
 
     @CommandLine.Option(names = { "--camel-spring-boot-version" }, description = "Camel version to use with Spring Boot")
@@ -112,7 +121,7 @@ abstract class ExportBaseCommand extends CamelCommand {
     protected String quarkusArtifactId;
 
     @CommandLine.Option(names = { "--quarkus-version" }, description = "Quarkus Platform version",
-                        defaultValue = "2.16.4.Final")
+                        defaultValue = "2.16.6.Final")
     protected String quarkusVersion;
 
     @CommandLine.Option(names = { "--maven-wrapper" }, defaultValue = "true",
@@ -163,13 +172,53 @@ abstract class ExportBaseCommand extends CamelCommand {
             RuntimeUtil.configureLog("off", false, false, false, true);
         }
 
-        printConfigurationValues("Exporting integration with the following configuration:");
+        if (!quiet) {
+            printConfigurationValues("Exporting integration with the following configuration:");
+        }
         // export
         return export();
     }
 
     public String getProfile() {
         return profile;
+    }
+
+    protected static String mavenRepositoriesAsPomXml(String repos) {
+        StringBuilder sb = new StringBuilder();
+        int i = 1;
+        sb.append("    <repositories>\n");
+        for (String repo : repos.split(",")) {
+            sb.append("        <repository>\n");
+            sb.append("            <id>custom").append(i++).append("</id>\n");
+            sb.append("            <url>").append(repo).append("</url>\n");
+            if (repo.contains("snapshots")) {
+                sb.append("            <releases>\n");
+                sb.append("                <enabled>false</enabled>\n");
+                sb.append("            </releases>\n");
+                sb.append("            <snapshots>\n");
+                sb.append("                <enabled>true</enabled>\n");
+                sb.append("            </snapshots>\n");
+            }
+            sb.append("        </repository>\n");
+        }
+        sb.append("    </repositories>\n");
+        sb.append("    <pluginRepositories>\n");
+        for (String repo : repos.split(",")) {
+            sb.append("        <pluginRepository>\n");
+            sb.append("            <id>custom").append(i++).append("</id>\n");
+            sb.append("            <url>").append(repo).append("</url>\n");
+            if (repo.contains("snapshots")) {
+                sb.append("            <releases>\n");
+                sb.append("                <enabled>false</enabled>\n");
+                sb.append("            </releases>\n");
+                sb.append("            <snapshots>\n");
+                sb.append("                <enabled>true</enabled>\n");
+                sb.append("            </snapshots>\n");
+            }
+            sb.append("        </pluginRepository>\n");
+        }
+        sb.append("    </pluginRepositories>\n");
+        return sb.toString();
     }
 
     protected abstract Integer export() throws Exception;
@@ -504,12 +553,12 @@ abstract class ExportBaseCommand extends CamelCommand {
      * @param  camelVersion the camel version
      * @return              repositories or null if none are in use
      */
-    protected static String getMavenRepos(File settings, Properties prop, String camelVersion) throws Exception {
-        StringJoiner sj = new StringJoiner(",");
+    protected String getMavenRepos(File settings, Properties prop, String camelVersion) throws Exception {
+        Set<String> answer = new LinkedHashSet<>();
 
-        String repos = prop.getProperty("camel.jbang.repos");
-        if (repos != null) {
-            sj.add(repos);
+        String propRepos = prop.getProperty("camel.jbang.repos");
+        if (propRepos != null) {
+            answer.add(propRepos);
         }
 
         if (camelVersion == null) {
@@ -517,7 +566,7 @@ abstract class ExportBaseCommand extends CamelCommand {
         }
         // include apache snapshot repo if we use SNAPSHOT version of Camel
         if (camelVersion.endsWith("-SNAPSHOT")) {
-            sj.add("https://repository.apache.org/content/groups/snapshots/");
+            answer.add("https://repository.apache.org/content/groups/snapshots/");
         }
 
         // there may be additional extra repositories
@@ -525,11 +574,15 @@ abstract class ExportBaseCommand extends CamelCommand {
         for (String line : lines) {
             if (line.startsWith("repository=")) {
                 String r = StringHelper.after(line, "repository=");
-                sj.add(r);
+                answer.add(r);
             }
         }
 
-        return sj.toString();
+        if (this.repos != null) {
+            Collections.addAll(answer, this.repos.split(","));
+        }
+
+        return String.join(",", answer);
     }
 
     protected static boolean hasModeline(File settings) {

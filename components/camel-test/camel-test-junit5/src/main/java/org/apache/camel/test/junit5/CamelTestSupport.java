@@ -58,6 +58,7 @@ import org.apache.camel.spi.PropertiesSource;
 import org.apache.camel.spi.Registry;
 import org.apache.camel.support.BreakpointSupport;
 import org.apache.camel.support.EndpointHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.test.CamelRouteCoverageDumper;
 import org.apache.camel.util.StopWatch;
 import org.apache.camel.util.StringHelper;
@@ -506,7 +507,7 @@ public abstract class CamelTestSupport
         String exclude = getRouteFilterExcludePattern();
         if (include != null || exclude != null) {
             LOG.info("Route filtering pattern: include={}, exclude={}", include, exclude);
-            context.getExtension(Model.class).setRouteFilterPattern(include, exclude);
+            context.getCamelContextExtension().getContextPlugin(Model.class).setRouteFilterPattern(include, exclude);
         }
 
         // prepare for in-between tests
@@ -576,7 +577,8 @@ public abstract class CamelTestSupport
             String dir = "target/camel-route-coverage";
             String name = className + "-" + StringHelper.before(currentTestName, "(") + ".xml";
 
-            ManagedCamelContext mc = context != null ? context.getExtension(ManagedCamelContext.class) : null;
+            ManagedCamelContext mc
+                    = context != null ? context.getCamelContextExtension().getContextPlugin(ManagedCamelContext.class) : null;
             ManagedCamelContextMBean managedCamelContext = mc != null ? mc.getManagedCamelContext() : null;
             if (managedCamelContext == null) {
                 LOG.warn("Cannot dump route coverage to file as JMX is not enabled. "
@@ -689,9 +691,9 @@ public abstract class CamelTestSupport
         boolean spring = hasClassAnnotation("org.springframework.boot.test.context.SpringBootTest",
                 "org.springframework.context.annotation.ComponentScan");
         if (!spring) {
-            context.getCamelContextExtension().getBeanPostProcessor().postProcessBeforeInitialization(this,
+            PluginHelper.getBeanPostProcessor(context).postProcessBeforeInitialization(this,
                     getClass().getName());
-            context.getCamelContextExtension().getBeanPostProcessor().postProcessAfterInitialization(this,
+            PluginHelper.getBeanPostProcessor(context).postProcessAfterInitialization(this,
                     getClass().getName());
         }
     }

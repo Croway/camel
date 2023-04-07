@@ -33,7 +33,6 @@ import org.w3c.dom.Document;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.ManagementStatisticsLevel;
 import org.apache.camel.Producer;
 import org.apache.camel.ProducerTemplate;
@@ -53,6 +52,7 @@ import org.apache.camel.model.rest.RestDefinition;
 import org.apache.camel.model.rest.RestsDefinition;
 import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.spi.UnitOfWork;
+import org.apache.camel.support.PluginHelper;
 
 @ManagedResource(description = "Managed CamelContext")
 public class ManagedCamelContext extends ManagedPerformanceCounter implements TimerListener, ManagedCamelContextMBean {
@@ -181,7 +181,7 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
 
     @Override
     public String getPackageScanClassResolver() {
-        return context.getCamelContextExtension().getPackageScanClassResolver().getClass().getName();
+        return PluginHelper.getPackageScanClassResolver(context).getClass().getName();
     }
 
     @Override
@@ -457,7 +457,7 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
 
     @Override
     public String dumpRestsAsXml(boolean resolvePlaceholders) throws Exception {
-        List<RestDefinition> rests = context.getExtension(Model.class).getRestDefinitions();
+        List<RestDefinition> rests = context.getCamelContextExtension().getContextPlugin(Model.class).getRestDefinitions();
         if (rests.isEmpty()) {
             return null;
         }
@@ -465,8 +465,7 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
         RestsDefinition def = new RestsDefinition();
         def.setRests(rests);
 
-        ExtendedCamelContext ecc = context.getCamelContextExtension();
-        return ecc.getModelToXMLDumper().dumpModelAsXml(context, def, resolvePlaceholders, false);
+        return PluginHelper.getModelToXMLDumper(context).dumpModelAsXml(context, def, resolvePlaceholders, false);
     }
 
     @Override
@@ -481,7 +480,7 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
 
     @Override
     public String dumpRoutesAsXml(boolean resolvePlaceholders, boolean resolveDelegateEndpoints) throws Exception {
-        List<RouteDefinition> routes = context.getExtension(Model.class).getRouteDefinitions();
+        List<RouteDefinition> routes = context.getCamelContextExtension().getContextPlugin(Model.class).getRouteDefinitions();
         if (routes.isEmpty()) {
             return null;
         }
@@ -490,13 +489,14 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
         RoutesDefinition def = new RoutesDefinition();
         def.setRoutes(routes);
 
-        ExtendedCamelContext ecc = context.getCamelContextExtension();
-        return ecc.getModelToXMLDumper().dumpModelAsXml(context, def, resolvePlaceholders, resolveDelegateEndpoints);
+        return PluginHelper.getModelToXMLDumper(context).dumpModelAsXml(context, def, resolvePlaceholders,
+                resolveDelegateEndpoints);
     }
 
     @Override
     public String dumpRouteTemplatesAsXml() throws Exception {
-        List<RouteTemplateDefinition> templates = context.getExtension(Model.class).getRouteTemplateDefinitions();
+        List<RouteTemplateDefinition> templates
+                = context.getCamelContextExtension().getContextPlugin(Model.class).getRouteTemplateDefinitions();
         if (templates.isEmpty()) {
             return null;
         }
@@ -505,8 +505,7 @@ public class ManagedCamelContext extends ManagedPerformanceCounter implements Ti
         RouteTemplatesDefinition def = new RouteTemplatesDefinition();
         def.setRouteTemplates(templates);
 
-        ExtendedCamelContext ecc = context.getCamelContextExtension();
-        return ecc.getModelToXMLDumper().dumpModelAsXml(context, def);
+        return PluginHelper.getModelToXMLDumper(context).dumpModelAsXml(context, def);
     }
 
     @Override

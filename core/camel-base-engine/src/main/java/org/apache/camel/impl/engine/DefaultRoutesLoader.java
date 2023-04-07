@@ -36,6 +36,7 @@ import org.apache.camel.spi.ModelineFactory;
 import org.apache.camel.spi.Resource;
 import org.apache.camel.spi.RoutesBuilderLoader;
 import org.apache.camel.spi.RoutesLoader;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.ResolverHelper;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
@@ -90,7 +91,7 @@ public class DefaultRoutesLoader extends ServiceSupport implements RoutesLoader,
 
         // first we need to parse for modeline to gather all the configurations
         if (camelContext.isModeline()) {
-            ModelineFactory factory = camelContext.getCamelContextExtension().getModelineFactory();
+            ModelineFactory factory = PluginHelper.getModelineFactory(camelContext);
             for (Resource resource : resources) {
                 RoutesBuilderLoader loader = resolveRoutesBuilderLoader(resource);
                 // gather resources for modeline
@@ -139,6 +140,8 @@ public class DefaultRoutesLoader extends ServiceSupport implements RoutesLoader,
 
     @Override
     public RoutesBuilderLoader getRoutesLoader(String extension) throws Exception {
+        ObjectHelper.notNull(extension, "extension");
+
         RoutesBuilderLoader answer = getCamelContext().getRegistry().lookupByNameAndType(
                 ROUTES_LOADER_KEY_PREFIX + extension,
                 RoutesBuilderLoader.class);

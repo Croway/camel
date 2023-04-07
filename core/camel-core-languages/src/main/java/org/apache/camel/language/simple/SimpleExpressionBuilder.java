@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
@@ -144,7 +145,7 @@ public final class SimpleExpressionBuilder {
                 // first use simple then create the group expression
                 exp = context.resolveLanguage("simple").createExpression(expression);
                 exp.init(context);
-                exp = ExpressionBuilder.groupIteratorExpression(exp, null, "" + group, false);
+                exp = ExpressionBuilder.groupIteratorExpression(exp, null, Integer.toString(group), false);
                 exp.init(context);
             }
 
@@ -270,6 +271,31 @@ public final class SimpleExpressionBuilder {
             @Override
             public String toString() {
                 return "random(" + min + "," + max + ")";
+            }
+        };
+    }
+
+    /**
+     * Returns a new empty object of the given type
+     */
+    public static Expression newEmptyExpression(final String type) {
+
+        return new ExpressionAdapter() {
+            @Override
+            public Object evaluate(Exchange exchange) {
+                if ("map".equalsIgnoreCase(type)) {
+                    return new LinkedHashMap<>();
+                } else if ("string".equalsIgnoreCase(type)) {
+                    return "";
+                } else if ("list".equalsIgnoreCase(type)) {
+                    return new ArrayList<>();
+                }
+                throw new IllegalArgumentException("function empty(%s) has unknown type".formatted(type));
+            }
+
+            @Override
+            public String toString() {
+                return "empty(%s)".formatted(type);
             }
         };
     }
@@ -937,19 +963,37 @@ public final class SimpleExpressionBuilder {
                     String after = text.substring(pos + 1);
                     type = classResolver.resolveClass(before);
                     if (type != null) {
-                        return ObjectHelper.lookupConstantFieldValue(type, after);
+                        // special for enum constants
+                        if (type.isEnum()) {
+                            Class<Enum<?>> enumClass = (Class<Enum<?>>) type;
+                            for (Enum<?> enumValue : enumClass.getEnumConstants()) {
+                                if (enumValue.name().equalsIgnoreCase(after)) {
+                                    return type.cast(enumValue);
+                                }
+                            }
+                            throw CamelExecutionException.wrapCamelExecutionException(exchange,
+                                    new ClassNotFoundException("Cannot find enum: " + after + " on type: " + type));
+                        } else {
+                            // we assume it is a field constant
+                            Object answer = ObjectHelper.lookupConstantFieldValue(type, after);
+                            if (answer != null) {
+                                return answer;
+                            }
+                        }
                     }
                 }
 
                 throw CamelExecutionException.wrapCamelExecutionException(exchange,
-                        new ClassNotFoundException("Cannot find type " + text));
+                        new ClassNotFoundException("Cannot find type: " + text));
             }
 
             @Override
             public String toString() {
                 return "type:" + name;
             }
-        };
+        }
+
+        ;
     }
 
     /**

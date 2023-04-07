@@ -59,10 +59,12 @@ import org.apache.camel.spi.PackageScanClassResolver;
 import org.apache.camel.spi.PeriodTaskScheduler;
 import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.spi.RouteTemplateParameterSource;
+import org.apache.camel.spi.RoutesLoader;
 import org.apache.camel.spi.StartupStepRecorder;
 import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.DefaultContextReloadStrategy;
 import org.apache.camel.support.LifecycleStrategySupport;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.support.ResourceHelper;
 import org.apache.camel.support.SimpleEventNotifierSupport;
@@ -267,7 +269,7 @@ public abstract class BaseMainSupport extends BaseService {
         // auto-detect camel configurations via base package scanning
         String basePackage = camelContext.getCamelContextExtension().getBasePackageScan();
         if (basePackage != null) {
-            PackageScanClassResolver pscr = camelContext.getCamelContextExtension().getPackageScanClassResolver();
+            PackageScanClassResolver pscr = PluginHelper.getPackageScanClassResolver(camelContext);
             Set<Class<?>> found1 = pscr.findImplementations(CamelConfiguration.class, basePackage);
             Set<Class<?>> found2 = pscr.findAnnotated(Configuration.class, basePackage);
             Set<Class<?>> found = new LinkedHashSet<>();
@@ -307,7 +309,7 @@ public abstract class BaseMainSupport extends BaseService {
 
         // lets use Camel's bean post processor on any existing configuration classes
         // so the instance has some support for dependency injection
-        CamelBeanPostProcessor postProcessor = camelContext.getCamelContextExtension().getBeanPostProcessor();
+        CamelBeanPostProcessor postProcessor = PluginHelper.getBeanPostProcessor(camelContext);
 
         // discover configurations from the registry
         Set<CamelConfiguration> registryConfigurations = camelContext.getRegistry().findByType(CamelConfiguration.class);
@@ -397,8 +399,8 @@ public abstract class BaseMainSupport extends BaseService {
         }
 
         if (vc.aws().isRefreshEnabled()) {
-            Optional<Runnable> task = camelContext.getCamelContextExtension()
-                    .getPeriodTaskResolver().newInstance("aws-secret-refresh", Runnable.class);
+            Optional<Runnable> task = PluginHelper.getPeriodTaskResolver(camelContext)
+                    .newInstance("aws-secret-refresh", Runnable.class);
             if (task.isPresent()) {
                 long period = vc.aws().getRefreshPeriod();
                 Runnable r = task.get();
@@ -410,14 +412,14 @@ public abstract class BaseMainSupport extends BaseService {
                     ContextReloadStrategy reloader = new DefaultContextReloadStrategy();
                     camelContext.addService(reloader);
                 }
-                PeriodTaskScheduler scheduler = getCamelContext().getCamelContextExtension().getPeriodTaskScheduler();
+                PeriodTaskScheduler scheduler = PluginHelper.getPeriodTaskScheduler(getCamelContext());
                 scheduler.schedulePeriodTask(r, period);
             }
         }
 
         if (vc.gcp().isRefreshEnabled()) {
-            Optional<Runnable> task = camelContext.getCamelContextExtension()
-                    .getPeriodTaskResolver().newInstance("gcp-secret-refresh", Runnable.class);
+            Optional<Runnable> task = PluginHelper.getPeriodTaskResolver(camelContext)
+                    .newInstance("gcp-secret-refresh", Runnable.class);
             if (task.isPresent()) {
                 long period = vc.gcp().getRefreshPeriod();
                 Runnable r = task.get();
@@ -429,14 +431,14 @@ public abstract class BaseMainSupport extends BaseService {
                     ContextReloadStrategy reloader = new DefaultContextReloadStrategy();
                     camelContext.addService(reloader);
                 }
-                PeriodTaskScheduler scheduler = getCamelContext().getCamelContextExtension().getPeriodTaskScheduler();
+                PeriodTaskScheduler scheduler = PluginHelper.getPeriodTaskScheduler(getCamelContext());
                 scheduler.schedulePeriodTask(r, period);
             }
         }
 
         if (vc.azure().isRefreshEnabled()) {
-            Optional<Runnable> task = camelContext.getCamelContextExtension()
-                    .getPeriodTaskResolver().newInstance("azure-secret-refresh", Runnable.class);
+            Optional<Runnable> task = PluginHelper.getPeriodTaskResolver(camelContext)
+                    .newInstance("azure-secret-refresh", Runnable.class);
             if (task.isPresent()) {
                 long period = vc.azure().getRefreshPeriod();
                 Runnable r = task.get();
@@ -448,7 +450,7 @@ public abstract class BaseMainSupport extends BaseService {
                     ContextReloadStrategy reloader = new DefaultContextReloadStrategy();
                     camelContext.addService(reloader);
                 }
-                PeriodTaskScheduler scheduler = getCamelContext().getCamelContextExtension().getPeriodTaskScheduler();
+                PeriodTaskScheduler scheduler = PluginHelper.getPeriodTaskScheduler(getCamelContext());
                 scheduler.schedulePeriodTask(r, period);
             }
         }
@@ -597,7 +599,7 @@ public abstract class BaseMainSupport extends BaseService {
 
     protected void configureRoutesLoader(CamelContext camelContext) {
         // use main based routes loader
-        camelContext.getCamelContextExtension().setRoutesLoader(new DefaultRoutesLoader());
+        camelContext.getCamelContextExtension().addContextPlugin(RoutesLoader.class, new DefaultRoutesLoader());
     }
 
     protected void modelineRoutes(CamelContext camelContext) throws Exception {
@@ -608,7 +610,7 @@ public abstract class BaseMainSupport extends BaseService {
             configurer.setRoutesCollector(routesCollector);
         }
 
-        configurer.setBeanPostProcessor(camelContext.getCamelContextExtension().getBeanPostProcessor());
+        configurer.setBeanPostProcessor(PluginHelper.getBeanPostProcessor(camelContext));
         configurer.setRoutesBuilders(mainConfigurationProperties.getRoutesBuilders());
         configurer.setRoutesBuilderClasses(mainConfigurationProperties.getRoutesBuilderClasses());
         if (mainConfigurationProperties.isBasePackageScanEnabled()) {
@@ -631,7 +633,7 @@ public abstract class BaseMainSupport extends BaseService {
             configurer.setRoutesCollector(routesCollector);
         }
 
-        configurer.setBeanPostProcessor(camelContext.getCamelContextExtension().getBeanPostProcessor());
+        configurer.setBeanPostProcessor(PluginHelper.getBeanPostProcessor(camelContext));
         configurer.setRoutesBuilders(mainConfigurationProperties.getRoutesBuilders());
         configurer.setRoutesBuilderClasses(mainConfigurationProperties.getRoutesBuilderClasses());
         if (mainConfigurationProperties.isBasePackageScanEnabled()) {
@@ -1216,7 +1218,7 @@ public abstract class BaseMainSupport extends BaseService {
         }
 
         // auto-detect camel-health on classpath
-        HealthCheckRegistry hcr = camelContext.getExtension(HealthCheckRegistry.class);
+        HealthCheckRegistry hcr = camelContext.getCamelContextExtension().getContextPlugin(HealthCheckRegistry.class);
         if (hcr == null) {
             if (health.getEnabled() != null && health.getEnabled()) {
                 LOG.warn("Cannot find HealthCheckRegistry from classpath. Add camel-health to classpath.");
@@ -1316,7 +1318,8 @@ public abstract class BaseMainSupport extends BaseService {
         // set properties per console
         for (String key : keys) {
             String name = StringHelper.before(key, ".");
-            DevConsole console = camelContext.getExtension(DevConsoleRegistry.class).resolveById(name);
+            DevConsole console
+                    = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class).resolveById(name);
             if (console == null) {
                 throw new IllegalArgumentException(
                         "Cannot resolve DevConsole with id: " + name);

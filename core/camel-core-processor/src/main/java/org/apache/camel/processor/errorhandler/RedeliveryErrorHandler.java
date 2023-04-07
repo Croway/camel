@@ -54,6 +54,7 @@ import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.EventHelper;
 import org.apache.camel.support.ExchangeHelper;
 import org.apache.camel.support.MessageHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.StopWatch;
@@ -117,7 +118,7 @@ public abstract class RedeliveryErrorHandler extends ErrorHandlerSupport
 
         this.camelContext = camelContext;
         this.reactiveExecutor = camelContext.getCamelContextExtension().getReactiveExecutor();
-        this.awaitManager = camelContext.getCamelContextExtension().getAsyncProcessorAwaitManager();
+        this.awaitManager = PluginHelper.getAsyncProcessorAwaitManager(camelContext);
         this.shutdownStrategy = camelContext.getShutdownStrategy();
         this.redeliveryProcessor = redeliveryProcessor;
         this.deadLetter = deadLetter;
@@ -494,6 +495,7 @@ public abstract class RedeliveryErrorHandler extends ErrorHandlerSupport
                 for (Throwable t : suppressed) {
                     if (t == previous) {
                         found = true;
+                        break;
                     }
                 }
                 if (!found) {
@@ -983,6 +985,7 @@ public abstract class RedeliveryErrorHandler extends ErrorHandlerSupport
                 for (Throwable t : suppressed) {
                     if (t == previous) {
                         found = true;
+                        break;
                     }
                 }
                 if (!found) {
@@ -1619,7 +1622,7 @@ public abstract class RedeliveryErrorHandler extends ErrorHandlerSupport
         if (redeliveryEnabled) {
             if (executorService == null) {
                 // use default shared executor service
-                executorService = camelContext.getCamelContextExtension().getErrorHandlerExecutorService();
+                executorService = PluginHelper.getErrorHandlerExecutorService(camelContext);
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Using ExecutorService: {} for redeliveries on error handler: {}", executorService, this);

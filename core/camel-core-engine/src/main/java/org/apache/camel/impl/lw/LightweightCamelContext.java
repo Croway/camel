@@ -208,16 +208,6 @@ public class LightweightCamelContext implements CamelContext, CatalogCamelContex
     }
 
     @Override
-    public <T> T getExtension(Class<T> type) {
-        return delegate.getExtension(type);
-    }
-
-    @Override
-    public <T> void setExtension(Class<T> type, T module) {
-        delegate.setExtension(type, module);
-    }
-
-    @Override
     public void start() {
         delegate.start();
     }
@@ -1278,12 +1268,6 @@ public class LightweightCamelContext implements CamelContext, CatalogCamelContex
     public String addRouteFromTemplate(String routeId, String routeTemplateId, String prefixId, Map<String, Object> parameters)
             throws Exception {
         return getModelCamelContext().addRouteFromTemplate(routeId, routeTemplateId, prefixId, parameters);
-    }
-
-    @Override
-    public String addRouteFromTemplate(String routeId, String routeTemplateId, RouteTemplateContext routeTemplateContext)
-            throws Exception {
-        return getModelCamelContext().addRouteFromTemplate(routeId, routeTemplateId, routeTemplateContext);
     }
 
     @Override

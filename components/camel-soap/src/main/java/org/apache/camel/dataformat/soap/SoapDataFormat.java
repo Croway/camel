@@ -111,17 +111,13 @@ public class SoapDataFormat extends JaxbDataFormat {
     /**
      * Create body content from a non Exception object. So the interface should be in doc lit bare style.
      *
-     * @param  inputObject    object to be put into the SOAP body
-     * @param  soapAction     for name resolution
-     * @param  headerElements in/out parameter used to capture header content if present
-     *
-     * @return                JAXBElement for the body content
+     * @param  inputObject object to be put into the SOAP body
+     * @param  soapAction  for name resolution
+     * @return             JAXBElement for the body content
      */
     protected List<Object> createContentFromObject(
-            final Object inputObject, String soapAction,
-            List<Object> headerElements) {
+            final Object inputObject, String soapAction) {
         List<Object> bodyParts = new ArrayList<>();
-        List<Object> headerParts = new ArrayList<>();
         bodyParts.add(inputObject);
 
         List<Object> bodyElements = new ArrayList<>();
@@ -129,22 +125,8 @@ public class SoapDataFormat extends JaxbDataFormat {
             QName name = elementNameStrategy.findQNameForSoapActionOrType(soapAction, bodyObj.getClass());
             if (name == null) {
                 LOG.warn("Could not find QName for class {}", bodyObj.getClass().getName());
-                continue;
             } else {
                 bodyElements.add(getElement(bodyObj, name));
-            }
-        }
-
-        for (Object headerObj : headerParts) {
-            QName name = elementNameStrategy.findQNameForSoapActionOrType(soapAction, headerObj.getClass());
-            if (name == null) {
-                LOG.warn("Could not find QName for class {}", headerObj.getClass().getName());
-                continue;
-            } else {
-                JAXBElement<?> headerElem = getElement(headerObj, name);
-                if (null != headerElem) {
-                    headerElements.add(headerElem);
-                }
             }
         }
 

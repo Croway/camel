@@ -22,13 +22,13 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.LambdaRouteBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.spi.PackageScanResourceResolver;
 import org.apache.camel.spi.Resource;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.AntPathMatcher;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.StopWatch;
@@ -138,14 +138,13 @@ public class DefaultRoutesCollector implements RoutesCollector {
             String excludePattern,
             String includePattern) {
 
-        final ExtendedCamelContext ecc = camelContext.getCamelContextExtension();
         final List<RoutesBuilder> answer = new ArrayList<>();
         final String[] includes = includePattern != null ? includePattern.split(",") : null;
 
         StopWatch watch = new StopWatch();
         Collection<Resource> accepted = findRouteResourcesFromDirectory(camelContext, excludePattern, includePattern);
         try {
-            Collection<RoutesBuilder> builders = ecc.getRoutesLoader().findRoutesBuilders(accepted);
+            Collection<RoutesBuilder> builders = PluginHelper.getRoutesLoader(camelContext).findRoutesBuilders(accepted);
             if (!builders.isEmpty()) {
                 log.debug("Found {} route builder from locations: {}", builders.size(), includes);
                 answer.addAll(builders);
@@ -169,8 +168,7 @@ public class DefaultRoutesCollector implements RoutesCollector {
             CamelContext camelContext,
             String excludePattern,
             String includePattern) {
-        final ExtendedCamelContext ecc = camelContext.getCamelContextExtension();
-        final PackageScanResourceResolver resolver = ecc.getPackageScanResourceResolver();
+        final PackageScanResourceResolver resolver = PluginHelper.getPackageScanResourceResolver(camelContext);
         final String[] includes = includePattern != null ? includePattern.split(",") : null;
         final String[] excludes = excludePattern != null ? excludePattern.split(",") : null;
 

@@ -33,6 +33,7 @@ import org.apache.camel.processor.FatalFallbackErrorHandler
 import org.apache.camel.processor.SendProcessor
 import org.apache.camel.spi.HeaderFilterStrategy
 import org.apache.camel.support.DefaultHeaderFilterStrategy
+import org.apache.camel.support.PluginHelper
 import spock.lang.AutoCleanup
 import spock.lang.Specification
 
@@ -41,8 +42,8 @@ class GroovyRouteBuilderLoaderTest extends Specification {
     def context = new DefaultCamelContext()
 
     def loadRoute(String location) {
-        def route = context.getResourceLoader().resolveResource(location)
-        context.getRoutesLoader().loadRoutes(route)
+        def route = PluginHelper.getResourceLoader(context).resolveResource(location)
+        PluginHelper.getRoutesLoader(context).loadRoutes(route)
     }
 
     def "load routes"() {

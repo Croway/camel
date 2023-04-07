@@ -59,8 +59,8 @@ public final class ActiveSpanManager {
         exchange.setProperty(ACTIVE_SPAN_PROPERTY,
                 new Holder((Holder) exchange.getProperty(ACTIVE_SPAN_PROPERTY), span));
         if (exchange.getContext().isUseMDCLogging()) {
-            MDC.put(MDC_TRACE_ID, "" + span.traceId());
-            MDC.put(MDC_SPAN_ID, "" + span.spanId());
+            MDC.put(MDC_TRACE_ID, span.traceId());
+            MDC.put(MDC_SPAN_ID, span.spanId());
         }
     }
 
@@ -81,8 +81,8 @@ public final class ActiveSpanManager {
                 Holder parent = holder.getParent();
                 if (parent != null) {
                     SpanAdapter span = holder.getParent().getSpan();
-                    MDC.put(MDC_TRACE_ID, "" + span.traceId());
-                    MDC.put(MDC_SPAN_ID, "" + span.spanId());
+                    MDC.put(MDC_TRACE_ID, span.traceId());
+                    MDC.put(MDC_SPAN_ID, span.spanId());
                 } else {
                     MDC.remove(MDC_TRACE_ID);
                     MDC.remove(MDC_SPAN_ID);
@@ -119,7 +119,7 @@ public final class ActiveSpanManager {
         public Holder(Holder parent, SpanAdapter span) {
             this.parent = parent;
             this.span = span;
-            this.scope = span.makeCurrent();
+            this.scope = new ScopeWrapper(span.makeCurrent(), Thread.currentThread().getId());
         }
 
         public Holder getParent() {
@@ -142,4 +142,29 @@ public final class ActiveSpanManager {
         }
     }
 
+    /**
+     * Makes closing scopes idempotent and prevents restoring scope on the wrong thread: Should be removed if
+     * https://github.com/open-telemetry/opentelemetry-java/issues/5055 is fixed.
+     */
+    private static class ScopeWrapper implements AutoCloseable {
+        private final long startThreadId;
+        private final AutoCloseable inner;
+        private boolean closed;
+
+        public ScopeWrapper(AutoCloseable inner, long startThreadId) {
+            this.startThreadId = startThreadId;
+            this.inner = inner;
+        }
+
+        @Override
+        public void close() throws Exception {
+            if (!closed && Thread.currentThread().getId() == startThreadId) {
+                closed = true;
+                inner.close();
+            } else {
+                LOG.debug("not closing scope, closed - {}, started on thread - '{}', current thread - '{}'",
+                        closed, startThreadId, Thread.currentThread().getId());
+            }
+        }
+    }
 }

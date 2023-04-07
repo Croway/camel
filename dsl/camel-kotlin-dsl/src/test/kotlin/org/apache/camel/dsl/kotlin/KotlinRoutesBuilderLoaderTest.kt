@@ -31,6 +31,7 @@ import org.apache.camel.model.rest.GetDefinition
 import org.apache.camel.model.rest.PostDefinition
 import org.apache.camel.processor.FatalFallbackErrorHandler
 import org.apache.camel.support.DefaultHeaderFilterStrategy
+import org.apache.camel.support.PluginHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
@@ -40,9 +41,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load routes`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         val routes = ctx.routeDefinitions
 
@@ -55,9 +56,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load routes with endpoint dsl`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-endpoint-dsl.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-endpoint-dsl.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         val routes = ctx.routeDefinitions
 
@@ -72,9 +73,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with rest`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-rest.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-rest.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         assertThat(ctx.restConfiguration.host).isEqualTo("my-host")
         assertThat(ctx.restConfiguration.port).isEqualTo(9192)
@@ -106,9 +107,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with beans`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-beans.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-beans.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         assertThat(ctx.registry.findByType(MyBean::class.java)).hasSize(1)
         assertThat(ctx.registry.lookupByName("myBean")).isInstanceOf(MyBean::class.java)
@@ -121,9 +122,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with components configuration`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-components-configuration.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-components-configuration.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         val seda = ctx.getComponent("seda", SedaComponent::class.java)
         val mySeda = ctx.getComponent("mySeda", SedaComponent::class.java)
@@ -141,9 +142,9 @@ class KotlinRoutesBuilderLoaderTest {
         assertThatExceptionOfType(RuntimeCamelException::class.java)
                 .isThrownBy {
                     val ctx = DefaultCamelContext()
-                    val res = ctx.resourceLoader.resolveResource("/routes/routes-with-components-configuration-error.kts")
+                    val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-components-configuration-error.kts")
 
-                    ctx.routesLoader.loadRoutes(res)
+                    PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
                 }
                 .withCauseInstanceOf(IllegalArgumentException::class.java)
                 .withMessageContaining("Type mismatch, expected: class org.apache.camel.component.log.LogComponent, got: class org.apache.camel.component.seda.SedaComponent");
@@ -152,9 +153,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with languages configuration`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-languages-configuration.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-languages-configuration.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         val bean = ctx.resolveLanguage("bean") as BeanLanguage
         assertThat(bean.beanType).isEqualTo(String::class.java)
@@ -168,9 +169,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with dataformats configuration`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-dataformats-configuration.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-dataformats-configuration.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
 
         val jackson = ctx.resolveDataFormat("jackson") as JacksonDataFormat
         assertThat(jackson.unmarshalType).isEqualTo(Map::class.java)
@@ -184,9 +185,9 @@ class KotlinRoutesBuilderLoaderTest {
     @Test
     fun `load integration with error handler`() {
         val ctx = DefaultCamelContext()
-        val res = ctx.resourceLoader.resolveResource("/routes/routes-with-error-handler.kts")
+        val res = PluginHelper.getResourceLoader(ctx).resolveResource("/routes/routes-with-error-handler.kts")
 
-        ctx.routesLoader.loadRoutes(res)
+        PluginHelper.getRoutesLoader(ctx).loadRoutes(res)
         ctx.start()
 
         try {

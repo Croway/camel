@@ -99,6 +99,23 @@ public interface VertxWebsocketComponentBuilderFactory {
             return this;
         }
         /**
+         * Whether the WebSocket client should add the Origin header to the
+         * WebSocket handshake request.
+         * 
+         * The option is a: &lt;code&gt;boolean&lt;/code&gt; type.
+         * 
+         * Default: true
+         * Group: advanced
+         * 
+         * @param allowOriginHeader the value to set
+         * @return the dsl builder
+         */
+        default VertxWebsocketComponentBuilder allowOriginHeader(
+                boolean allowOriginHeader) {
+            doSetProperty("allowOriginHeader", allowOriginHeader);
+            return this;
+        }
+        /**
          * Whether autowiring is enabled. This is used for automatic autowiring
          * options (the option must be marked as autowired) by looking up in the
          * registry to find if there is a single instance of matching type,
@@ -117,6 +134,55 @@ public interface VertxWebsocketComponentBuilderFactory {
         default VertxWebsocketComponentBuilder autowiredEnabled(
                 boolean autowiredEnabled) {
             doSetProperty("autowiredEnabled", autowiredEnabled);
+            return this;
+        }
+        /**
+         * Default value for host name that the WebSocket should bind to.
+         * 
+         * The option is a: &lt;code&gt;java.lang.String&lt;/code&gt; type.
+         * 
+         * Default: 0.0.0.0
+         * Group: advanced
+         * 
+         * @param defaultHost the value to set
+         * @return the dsl builder
+         */
+        default VertxWebsocketComponentBuilder defaultHost(
+                java.lang.String defaultHost) {
+            doSetProperty("defaultHost", defaultHost);
+            return this;
+        }
+        /**
+         * Default value for the port that the WebSocket should bind to.
+         * 
+         * The option is a: &lt;code&gt;int&lt;/code&gt; type.
+         * 
+         * Default: 0
+         * Group: advanced
+         * 
+         * @param defaultPort the value to set
+         * @return the dsl builder
+         */
+        default VertxWebsocketComponentBuilder defaultPort(int defaultPort) {
+            doSetProperty("defaultPort", defaultPort);
+            return this;
+        }
+        /**
+         * The value of the Origin header that the WebSocket client should use
+         * on the WebSocket handshake request. When not specified, the WebSocket
+         * client will automatically determine the value for the Origin from the
+         * request URL.
+         * 
+         * The option is a: &lt;code&gt;java.lang.String&lt;/code&gt; type.
+         * 
+         * Group: advanced
+         * 
+         * @param originHeaderUrl the value to set
+         * @return the dsl builder
+         */
+        default VertxWebsocketComponentBuilder originHeaderUrl(
+                java.lang.String originHeaderUrl) {
+            doSetProperty("originHeaderUrl", originHeaderUrl);
             return this;
         }
         /**
@@ -200,7 +266,11 @@ public interface VertxWebsocketComponentBuilderFactory {
             switch (name) {
             case "bridgeErrorHandler": ((VertxWebsocketComponent) component).setBridgeErrorHandler((boolean) value); return true;
             case "lazyStartProducer": ((VertxWebsocketComponent) component).setLazyStartProducer((boolean) value); return true;
+            case "allowOriginHeader": ((VertxWebsocketComponent) component).setAllowOriginHeader((boolean) value); return true;
             case "autowiredEnabled": ((VertxWebsocketComponent) component).setAutowiredEnabled((boolean) value); return true;
+            case "defaultHost": ((VertxWebsocketComponent) component).setDefaultHost((java.lang.String) value); return true;
+            case "defaultPort": ((VertxWebsocketComponent) component).setDefaultPort((int) value); return true;
+            case "originHeaderUrl": ((VertxWebsocketComponent) component).setOriginHeaderUrl((java.lang.String) value); return true;
             case "router": ((VertxWebsocketComponent) component).setRouter((io.vertx.ext.web.Router) value); return true;
             case "vertx": ((VertxWebsocketComponent) component).setVertx((io.vertx.core.Vertx) value); return true;
             case "vertxOptions": ((VertxWebsocketComponent) component).setVertxOptions((io.vertx.core.VertxOptions) value); return true;

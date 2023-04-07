@@ -24,6 +24,7 @@ import org.apache.camel.health.HealthCheck;
 import org.apache.camel.health.HealthCheckResolver;
 import org.apache.camel.spi.PackageScanResourceResolver;
 import org.apache.camel.spi.Resource;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +43,8 @@ public class DefaultHealthChecksLoader {
 
     public DefaultHealthChecksLoader(CamelContext camelContext) {
         this.camelContext = camelContext;
-        this.resolver = camelContext.getCamelContextExtension().getPackageScanResourceResolver();
-        this.healthCheckResolver = camelContext.getCamelContextExtension().getHealthCheckResolver();
+        this.resolver = PluginHelper.getPackageScanResourceResolver(camelContext);
+        this.healthCheckResolver = PluginHelper.getHealthCheckResolver(camelContext);
     }
 
     public Collection<HealthCheck> loadHealthChecks() {

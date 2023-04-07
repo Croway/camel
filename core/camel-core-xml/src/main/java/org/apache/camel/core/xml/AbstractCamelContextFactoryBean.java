@@ -142,6 +142,7 @@ import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.ObjectHelper;
 import org.apache.camel.support.OrderedComparator;
 import org.apache.camel.support.PatternHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.StringHelper;
 import org.apache.camel.util.concurrent.ThreadPoolRejectedPolicy;
 import org.slf4j.Logger;
@@ -201,7 +202,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         PackageScanClassResolver packageResolver = getBeanForType(PackageScanClassResolver.class);
         if (packageResolver != null) {
             LOG.info("Using custom PackageScanClassResolver: {}", packageResolver);
-            getContext().getCamelContextExtension().setPackageScanClassResolver(packageResolver);
+            getContext().getCamelContextExtension().addContextPlugin(PackageScanClassResolver.class, packageResolver);
         }
 
         // also set type converter registry as early as possible
@@ -266,7 +267,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         AsyncProcessorAwaitManager asyncProcessorAwaitManager = getBeanForType(AsyncProcessorAwaitManager.class);
         if (asyncProcessorAwaitManager != null) {
             LOG.info("Using custom AsyncProcessorAwaitManager: {}", asyncProcessorAwaitManager);
-            getContext().getCamelContextExtension().setAsyncProcessorAwaitManager(asyncProcessorAwaitManager);
+            getContext().getCamelContextExtension().addContextPlugin(AsyncProcessorAwaitManager.class, asyncProcessorAwaitManager);
         }
         ManagementStrategy managementStrategy = getBeanForType(ManagementStrategy.class);
         if (managementStrategy != null) {
@@ -286,7 +287,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         UnitOfWorkFactory unitOfWorkFactory = getBeanForType(UnitOfWorkFactory.class);
         if (unitOfWorkFactory != null) {
             LOG.info("Using custom UnitOfWorkFactory: {}", unitOfWorkFactory);
-            getContext().getCamelContextExtension().setUnitOfWorkFactory(unitOfWorkFactory);
+            getContext().getCamelContextExtension().addContextPlugin(UnitOfWorkFactory.class, unitOfWorkFactory);
         }
         RuntimeEndpointRegistry runtimeEndpointRegistry = getBeanForType(RuntimeEndpointRegistry.class);
         if (runtimeEndpointRegistry != null) {
@@ -407,7 +408,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         if (healthCheckRegistry != null) {
             healthCheckRegistry.setCamelContext(getContext());
             LOG.debug("Using HealthCheckRegistry: {}", healthCheckRegistry);
-            getContext().setExtension(HealthCheckRegistry.class, healthCheckRegistry);
+            getContext().getCamelContextExtension().addContextPlugin(HealthCheckRegistry.class, healthCheckRegistry);
         } else {
             // okay attempt to inject this camel context into existing health check (if any)
             healthCheckRegistry = HealthCheckRegistry.get(getContext());
@@ -429,7 +430,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         if (devConsoleRegistry != null) {
             devConsoleRegistry.setCamelContext(getContext());
             LOG.debug("Using DevConsoleRegistry: {}", devConsoleRegistry);
-            getContext().setExtension(DevConsoleRegistry.class, devConsoleRegistry);
+            getContext().getCamelContextExtension().addContextPlugin(DevConsoleRegistry.class, devConsoleRegistry);
         } else {
             // okay attempt to inject this camel context into existing dev console (if any)
             devConsoleRegistry = DevConsoleRegistry.get(getContext());
@@ -519,6 +520,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
                     FromDefinition from = route.getInput();
                     if (from.getUri() != null && from.getUri().startsWith("rest-api:")) {
                         hasRestApi = true;
+                        break;
                     }
                 }
                 if (!hasRestApi) {
@@ -1156,7 +1158,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
             context.setStartupSummaryLevel(getStartupSummaryLevel());
         }
         if (getBeanPostProcessorEnabled() != null) {
-            CamelBeanPostProcessor cbpp = context.getCamelContextExtension().getBeanPostProcessor();
+            CamelBeanPostProcessor cbpp = PluginHelper.getBeanPostProcessor(context);
             if (cbpp != null) {
                 cbpp.setEnabled(CamelContextHelper.parseBoolean(context, getBeanPostProcessorEnabled()));
             }
@@ -1361,9 +1363,8 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
      * Strategy to install all available routes into the context
      */
     protected void installRoutes() throws Exception {
-        List<RouteBuilder> builders = new ArrayList<>();
 
-        // lets add RoutesBuilder's added from references
+        // let's add RoutesBuilder's added from references
         if (getBuilderRefs() != null) {
             for (RouteBuilderDefinition builderRef : getBuilderRefs()) {
                 RoutesBuilder routes = builderRef.createRoutes(getContext());
@@ -1380,12 +1381,6 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
             getContext().addRoutes(routeBuilder);
         }
 
-        // install builders
-        for (RouteBuilder builder : builders) {
-            // Inject the annotated resource
-            postProcessBeforeInit(builder);
-            getContext().addRoutes(builder);
-        }
     }
 
     protected abstract void postProcessBeforeInit(RouteBuilder builder);
@@ -1476,7 +1471,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         ModelJAXBContextFactory modelJAXBContextFactory = getBeanForType(ModelJAXBContextFactory.class);
         if (modelJAXBContextFactory != null) {
             LOG.info("Using custom ModelJAXBContextFactory: {}", modelJAXBContextFactory);
-            getContext().getCamelContextExtension().setModelJAXBContextFactory(modelJAXBContextFactory);
+            getContext().getCamelContextExtension().addContextPlugin(ModelJAXBContextFactory.class, modelJAXBContextFactory);
         }
         ClassResolver classResolver = getBeanForType(ClassResolver.class);
         if (classResolver != null) {
@@ -1486,7 +1481,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         FactoryFinderResolver factoryFinderResolver = getBeanForType(FactoryFinderResolver.class);
         if (factoryFinderResolver != null) {
             LOG.info("Using custom FactoryFinderResolver: {}", factoryFinderResolver);
-            getContext().getCamelContextExtension().setFactoryFinderResolver(factoryFinderResolver);
+            getContext().getCamelContextExtension().addContextPlugin(FactoryFinderResolver.class, factoryFinderResolver);
         }
         ExecutorServiceManager executorServiceStrategy = getBeanForType(ExecutorServiceManager.class);
         if (executorServiceStrategy != null) {
@@ -1501,7 +1496,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         ProcessorFactory processorFactory = getBeanForType(ProcessorFactory.class);
         if (processorFactory != null) {
             LOG.info("Using custom ProcessorFactory: {}", processorFactory);
-            getContext().getCamelContextExtension().setProcessorFactory(processorFactory);
+            getContext().getCamelContextExtension().addContextPlugin(ProcessorFactory.class, processorFactory);
         }
         Debugger debugger = getBeanForType(Debugger.class);
         if (debugger != null) {
@@ -1516,7 +1511,7 @@ public abstract class AbstractCamelContextFactoryBean<T extends ModelCamelContex
         NodeIdFactory nodeIdFactory = getBeanForType(NodeIdFactory.class);
         if (nodeIdFactory != null) {
             LOG.info("Using custom NodeIdFactory: {}", nodeIdFactory);
-            getContext().getCamelContextExtension().setNodeIdFactory(nodeIdFactory);
+            getContext().getCamelContextExtension().addContextPlugin(NodeIdFactory.class, nodeIdFactory);
         }
         StreamCachingStrategy streamCachingStrategy = getBeanForType(StreamCachingStrategy.class);
         if (streamCachingStrategy != null) {

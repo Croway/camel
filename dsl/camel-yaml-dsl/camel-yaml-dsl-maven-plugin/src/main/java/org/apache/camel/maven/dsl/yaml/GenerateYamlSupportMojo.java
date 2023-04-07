@@ -259,9 +259,7 @@ public abstract class GenerateYamlSupportMojo extends AbstractMojo {
             }
 
             String[] elements = item.split(",");
-            for (String element : elements) {
-                answer.add(element);
-            }
+            answer.addAll(Arrays.asList(elements));
         }
 
         return answer.stream();
@@ -446,10 +444,9 @@ public abstract class GenerateYamlSupportMojo extends AbstractMojo {
      * Load all the definitions.
      */
     protected Set<ClassInfo> definitions() {
-        final Set<ClassInfo> discovered = new LinkedHashSet<>();
         final Set<ClassInfo> answer = new LinkedHashSet<>();
 
-        discovered.addAll(models().values());
+        final Set<ClassInfo> discovered = new LinkedHashSet<>(models().values());
 
         for (ClassInfo type : discovered) {
             answer.addAll(definitions(type));

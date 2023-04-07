@@ -18,6 +18,7 @@ package org.apache.camel.impl.engine;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
@@ -91,6 +92,7 @@ import org.apache.camel.spi.ValidatorRegistry;
 import org.apache.camel.support.DefaultRegistry;
 import org.apache.camel.support.DefaultUuidGenerator;
 import org.apache.camel.support.NormalizedUri;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.ResolverHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,6 +130,14 @@ public class SimpleCamelContext extends AbstractCamelContext {
     }
 
     @Override
+    public void doBuild() throws Exception {
+        super.doBuild();
+
+        getCamelContextExtension().addContextPlugin(CliConnectorFactory.class, createCliConnectorFactory());
+        getCamelContextExtension().addContextPlugin(ScheduledExecutorService.class, createErrorHandlerExecutorService());
+    }
+
+    @Override
     protected HealthCheckRegistry createHealthCheckRegistry() {
         Optional<HealthCheckRegistry> result = ResolverHelper.resolveService(
                 getCamelContextReference(),
@@ -152,7 +162,7 @@ public class SimpleCamelContext extends AbstractCamelContext {
     @Override
     protected TypeConverter createTypeConverter() {
         return new DefaultTypeConverter(
-                getCamelContextReference(), getPackageScanClassResolver(), getInjector(),
+                getCamelContextReference(), PluginHelper.getPackageScanClassResolver(this), getInjector(),
                 isLoadTypeConverters());
     }
 
@@ -173,11 +183,7 @@ public class SimpleCamelContext extends AbstractCamelContext {
     protected Injector createInjector() {
         FactoryFinder finder = getBootstrapFactoryFinder();
         Optional<Injector> result = finder.newInstance("Injector", Injector.class);
-        if (result.isPresent()) {
-            return result.get();
-        } else {
-            return new DefaultInjector(getCamelContextReference());
-        }
+        return result.orElseGet(() -> new DefaultInjector(getCamelContextReference()));
     }
 
     @Override
@@ -261,7 +267,7 @@ public class SimpleCamelContext extends AbstractCamelContext {
     @Override
     protected PeriodTaskResolver createPeriodTaskResolver() {
         // we need a factory finder
-        FactoryFinder finder = getCamelContextExtension().getFactoryFinderResolver()
+        FactoryFinder finder = PluginHelper.getFactoryFinderResolver(getCamelContextExtension())
                 .resolveBootstrapFactoryFinder(getClassResolver(), PeriodTaskResolver.RESOURCE_PATH);
         return new DefaultPeriodTaskResolver(finder);
     }
@@ -424,8 +430,7 @@ public class SimpleCamelContext extends AbstractCamelContext {
         return result.orElseGet(DefaultHeadersMapFactory::new);
     }
 
-    @Override
-    protected CliConnectorFactory createCliConnectorFactory() {
+    private CliConnectorFactory createCliConnectorFactory() {
         // lookup in registry first
         CliConnectorFactory ccf = getCamelContextReference().getRegistry().findSingleByType(CliConnectorFactory.class);
         if (ccf != null) {
@@ -572,13 +577,13 @@ public class SimpleCamelContext extends AbstractCamelContext {
             }
         }
         if (tracer == null) {
-            tracer = getExtension(Tracer.class);
+            tracer = getCamelContextExtension().getContextPlugin(Tracer.class);
         }
         if (tracer == null) {
             tracer = new DefaultTracer();
             tracer.setEnabled(isTracing());
             tracer.setStandby(isTracingStandby());
-            setExtension(Tracer.class, tracer);
+            getCamelContextExtension().addContextPlugin(Tracer.class, tracer);
         }
         return tracer;
     }
@@ -689,12 +694,6 @@ public class SimpleCamelContext extends AbstractCamelContext {
 
     @Override
     public String addRouteFromTemplate(String routeId, String routeTemplateId, String prefixId, Map<String, Object> parameters)
-            throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String addRouteFromTemplate(String routeId, String routeTemplateId, RouteTemplateContext routeTemplateContext)
             throws Exception {
         throw new UnsupportedOperationException();
     }

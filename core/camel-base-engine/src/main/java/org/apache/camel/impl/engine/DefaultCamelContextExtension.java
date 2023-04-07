@@ -18,13 +18,13 @@
 package org.apache.camel.impl.engine;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.Endpoint;
@@ -36,67 +36,34 @@ import org.apache.camel.ResolveEndpointFailedException;
 import org.apache.camel.Route;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.Service;
-import org.apache.camel.catalog.RuntimeCamelCatalog;
-import org.apache.camel.console.DevConsoleResolver;
-import org.apache.camel.health.HealthCheckResolver;
-import org.apache.camel.spi.AnnotationBasedProcessorFactory;
-import org.apache.camel.spi.AsyncProcessorAwaitManager;
-import org.apache.camel.spi.BeanIntrospection;
-import org.apache.camel.spi.BeanProcessorFactory;
-import org.apache.camel.spi.BeanProxyFactory;
 import org.apache.camel.spi.BootstrapCloseable;
-import org.apache.camel.spi.CamelBeanPostProcessor;
-import org.apache.camel.spi.CamelDependencyInjectionAnnotationFactory;
-import org.apache.camel.spi.CliConnectorFactory;
-import org.apache.camel.spi.ComponentNameResolver;
-import org.apache.camel.spi.ComponentResolver;
-import org.apache.camel.spi.ConfigurerResolver;
-import org.apache.camel.spi.DataFormatResolver;
 import org.apache.camel.spi.Debugger;
 import org.apache.camel.spi.DebuggerFactory;
-import org.apache.camel.spi.DeferServiceFactory;
 import org.apache.camel.spi.EndpointStrategy;
 import org.apache.camel.spi.EndpointUriFactory;
 import org.apache.camel.spi.EventNotifier;
 import org.apache.camel.spi.ExchangeFactory;
 import org.apache.camel.spi.ExchangeFactoryManager;
 import org.apache.camel.spi.FactoryFinder;
-import org.apache.camel.spi.FactoryFinderResolver;
 import org.apache.camel.spi.HeadersMapFactory;
-import org.apache.camel.spi.InterceptEndpointFactory;
 import org.apache.camel.spi.InterceptStrategy;
-import org.apache.camel.spi.InternalProcessorFactory;
-import org.apache.camel.spi.LanguageResolver;
 import org.apache.camel.spi.LifecycleStrategy;
 import org.apache.camel.spi.LogListener;
 import org.apache.camel.spi.ManagementMBeanAssembler;
 import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.spi.ManagementStrategyFactory;
-import org.apache.camel.spi.ModelJAXBContextFactory;
-import org.apache.camel.spi.ModelToXMLDumper;
-import org.apache.camel.spi.ModelineFactory;
-import org.apache.camel.spi.NodeIdFactory;
 import org.apache.camel.spi.NormalizedEndpointUri;
-import org.apache.camel.spi.PackageScanClassResolver;
-import org.apache.camel.spi.PackageScanResourceResolver;
-import org.apache.camel.spi.PeriodTaskResolver;
-import org.apache.camel.spi.PeriodTaskScheduler;
+import org.apache.camel.spi.PluginManager;
 import org.apache.camel.spi.ProcessorExchangeFactory;
-import org.apache.camel.spi.ProcessorFactory;
 import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.spi.ReactiveExecutor;
 import org.apache.camel.spi.Registry;
-import org.apache.camel.spi.ResourceLoader;
-import org.apache.camel.spi.RestBindingJaxbDataFormatFactory;
 import org.apache.camel.spi.RouteController;
-import org.apache.camel.spi.RouteFactory;
 import org.apache.camel.spi.RouteStartupOrder;
-import org.apache.camel.spi.RoutesLoader;
 import org.apache.camel.spi.StartupStepRecorder;
-import org.apache.camel.spi.UnitOfWorkFactory;
-import org.apache.camel.spi.UriFactoryResolver;
 import org.apache.camel.support.EndpointHelper;
 import org.apache.camel.support.NormalizedUri;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,17 +73,39 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
 
     private final AbstractCamelContext camelContext;
     private final ThreadLocal<Boolean> isSetupRoutes = new ThreadLocal<>();
-    private List<InterceptStrategy> interceptStrategies = new ArrayList<>();
+    private final List<InterceptStrategy> interceptStrategies = new ArrayList<>();
     private final Map<String, FactoryFinder> factories = new ConcurrentHashMap<>();
-    private Set<LogListener> logListeners;
+    private final Map<String, FactoryFinder> bootstrapFactories = new ConcurrentHashMap<>();
+    private final Set<LogListener> logListeners = new LinkedHashSet<>();
+    private final PluginManager pluginManager = new DefaultContextPluginManager();
+    private final RouteController internalRouteController;
+
+    // start auto assigning route ids using numbering 1000 and upwards
+    private final List<BootstrapCloseable> bootstraps = new CopyOnWriteArrayList<>();
+
     private volatile String description;
+    private volatile ExchangeFactory exchangeFactory;
+    private volatile ExchangeFactoryManager exchangeFactoryManager;
+    private volatile ProcessorExchangeFactory processorExchangeFactory;
+    private volatile ReactiveExecutor reactiveExecutor;
+    private volatile Registry registry;
+    private volatile ManagementStrategy managementStrategy;
+    private volatile ManagementMBeanAssembler managementMBeanAssembler;
+    private volatile HeadersMapFactory headersMapFactory;
+    private volatile boolean eventNotificationApplicable;
+
     @Deprecated
     private ErrorHandlerFactory errorHandlerFactory;
     private String basePackageScan;
     private boolean lightweight;
 
+    private final Object lock = new Object();
+
+    private volatile FactoryFinder bootstrapFactoryFinder;
+
     public DefaultCamelContextExtension(AbstractCamelContext camelContext) {
         this.camelContext = camelContext;
+        this.internalRouteController = new InternalRouteController(camelContext);
     }
 
     @Override
@@ -214,12 +203,27 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
 
     @Override
     public void addBootstrap(BootstrapCloseable bootstrap) {
-        camelContext.bootstraps.add(bootstrap);
+        bootstraps.add(bootstrap);
+    }
+
+    void closeBootstraps() {
+        for (BootstrapCloseable bootstrap : bootstraps) {
+            try {
+                bootstrap.close();
+            } catch (Exception e) {
+                LOG.warn("Error during closing bootstrap. This exception is ignored.", e);
+            }
+        }
+        bootstraps.clear();
+    }
+
+    List<BootstrapCloseable> getBootstraps() {
+        return bootstraps;
     }
 
     @Override
     public List<Service> getServices() {
-        return Collections.unmodifiableList(camelContext.servicesToStop);
+        return camelContext.getInternalServiceManager().getServices();
     }
 
     @Override
@@ -248,136 +252,30 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public CamelBeanPostProcessor getBeanPostProcessor() {
-        if (camelContext.beanPostProcessor == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.beanPostProcessor == null) {
-                    setBeanPostProcessor(camelContext.createBeanPostProcessor());
-                }
-            }
-        }
-        return camelContext.beanPostProcessor;
-    }
-
-    @Override
-    public void setBeanPostProcessor(CamelBeanPostProcessor beanPostProcessor) {
-        camelContext.beanPostProcessor = camelContext.doAddService(beanPostProcessor);
-    }
-
-    @Override
-    public CamelDependencyInjectionAnnotationFactory getDependencyInjectionAnnotationFactory() {
-        if (camelContext.dependencyInjectionAnnotationFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.dependencyInjectionAnnotationFactory == null) {
-                    setDependencyInjectionAnnotationFactory(camelContext.createDependencyInjectionAnnotationFactory());
-                }
-            }
-        }
-        return camelContext.dependencyInjectionAnnotationFactory;
-    }
-
-    @Override
-    public void setDependencyInjectionAnnotationFactory(
-            CamelDependencyInjectionAnnotationFactory dependencyInjectionAnnotationFactory) {
-        camelContext.dependencyInjectionAnnotationFactory = dependencyInjectionAnnotationFactory;
-    }
-
-    @Override
     public ManagementMBeanAssembler getManagementMBeanAssembler() {
-        return camelContext.managementMBeanAssembler;
+        return managementMBeanAssembler;
     }
 
-    public ComponentResolver getComponentResolver() {
-        if (camelContext.componentResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.componentResolver == null) {
-                    setComponentResolver(camelContext.createComponentResolver());
-                }
-            }
-        }
-        return camelContext.componentResolver;
-    }
-
-    public void setComponentResolver(ComponentResolver componentResolver) {
-        camelContext.componentResolver = camelContext.doAddService(componentResolver);
-    }
-
-    public ComponentNameResolver getComponentNameResolver() {
-        if (camelContext.componentNameResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.componentNameResolver == null) {
-                    setComponentNameResolver(camelContext.createComponentNameResolver());
-                }
-            }
-        }
-        return camelContext.componentNameResolver;
-    }
-
-    public void setComponentNameResolver(ComponentNameResolver componentNameResolver) {
-        camelContext.componentNameResolver = camelContext.doAddService(componentNameResolver);
-    }
-
-    public LanguageResolver getLanguageResolver() {
-        if (camelContext.languageResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.languageResolver == null) {
-                    setLanguageResolver(camelContext.createLanguageResolver());
-                }
-            }
-        }
-        return camelContext.languageResolver;
-    }
-
-    public void setLanguageResolver(LanguageResolver languageResolver) {
-        camelContext.languageResolver = camelContext.doAddService(languageResolver);
-    }
-
-    public ConfigurerResolver getConfigurerResolver() {
-        if (camelContext.configurerResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.configurerResolver == null) {
-                    setConfigurerResolver(camelContext.createConfigurerResolver());
-                }
-            }
-        }
-        return camelContext.configurerResolver;
-    }
-
-    public void setConfigurerResolver(ConfigurerResolver configurerResolver) {
-        camelContext.configurerResolver = camelContext.doAddService(configurerResolver);
-    }
-
-    public UriFactoryResolver getUriFactoryResolver() {
-        if (camelContext.uriFactoryResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.uriFactoryResolver == null) {
-                    setUriFactoryResolver(camelContext.createUriFactoryResolver());
-                }
-            }
-        }
-        return camelContext.uriFactoryResolver;
-    }
-
-    public void setUriFactoryResolver(UriFactoryResolver uriFactoryResolver) {
-        camelContext.uriFactoryResolver = camelContext.doAddService(uriFactoryResolver);
+    void setManagementMBeanAssembler(ManagementMBeanAssembler managementMBeanAssembler) {
+        this.managementMBeanAssembler = camelContext.getInternalServiceManager().addService(managementMBeanAssembler, false);
     }
 
     @Override
     public Registry getRegistry() {
-        if (camelContext.registry == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.registry == null) {
+        if (registry == null) {
+            synchronized (lock) {
+                if (registry == null) {
                     setRegistry(camelContext.createRegistry());
                 }
             }
         }
-        return camelContext.registry;
+        return registry;
     }
 
     @Override
     public void setRegistry(Registry registry) {
         CamelContextAware.trySetCamelContext(registry, camelContext);
-        camelContext.registry = registry;
+        this.registry = registry;
     }
 
     @Override
@@ -409,10 +307,6 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
 
     @Override
     public void addLogListener(LogListener listener) {
-        if (logListeners == null) {
-            logListeners = new LinkedHashSet<>();
-        }
-
         // avoid adding double which can happen with spring xml on spring boot
         logListeners.add(listener);
     }
@@ -428,43 +322,13 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public ScheduledExecutorService getErrorHandlerExecutorService() {
-        if (camelContext.errorHandlerExecutorService == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.errorHandlerExecutorService == null) {
-                    // setup default thread pool for error handler
-                    camelContext.errorHandlerExecutorService = camelContext.createErrorHandlerExecutorService();
-                }
-            }
-        }
-        return camelContext.errorHandlerExecutorService;
-    }
-
-    @Override
-    public UnitOfWorkFactory getUnitOfWorkFactory() {
-        if (camelContext.unitOfWorkFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.unitOfWorkFactory == null) {
-                    setUnitOfWorkFactory(camelContext.createUnitOfWorkFactory());
-                }
-            }
-        }
-        return camelContext.unitOfWorkFactory;
-    }
-
-    @Override
-    public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
-        camelContext.unitOfWorkFactory = camelContext.doAddService(unitOfWorkFactory);
-    }
-
-    @Override
     public boolean isEventNotificationApplicable() {
-        return camelContext.eventNotificationApplicable;
+        return eventNotificationApplicable;
     }
 
     @Override
     public void setEventNotificationApplicable(boolean eventNotificationApplicable) {
-        camelContext.eventNotificationApplicable = eventNotificationApplicable;
+        this.eventNotificationApplicable = eventNotificationApplicable;
     }
 
     @Override
@@ -473,184 +337,32 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public ConfigurerResolver getBootstrapConfigurerResolver() {
-        if (camelContext.bootstrapConfigurerResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.bootstrapConfigurerResolver == null) {
-                    camelContext.bootstrapConfigurerResolver = new BootstrapConfigurerResolver(
-                            getFactoryFinderResolver().resolveBootstrapFactoryFinder(camelContext.getClassResolver(),
-                                    ConfigurerResolver.RESOURCE_PATH));
-                }
-            }
-        }
-        return camelContext.bootstrapConfigurerResolver;
-    }
-
-    @Override
-    public void setBootstrapConfigurerResolver(ConfigurerResolver configurerResolver) {
-        camelContext.bootstrapConfigurerResolver = configurerResolver;
-    }
-
-    @Override
     public FactoryFinder getBootstrapFactoryFinder() {
-        if (camelContext.bootstrapFactoryFinder == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.bootstrapFactoryFinder == null) {
-                    camelContext.bootstrapFactoryFinder
-                            = getFactoryFinderResolver().resolveBootstrapFactoryFinder(camelContext.getClassResolver());
+        if (bootstrapFactoryFinder == null) {
+            synchronized (lock) {
+                if (bootstrapFactoryFinder == null) {
+                    bootstrapFactoryFinder
+                            = PluginHelper.getFactoryFinderResolver(this)
+                                    .resolveBootstrapFactoryFinder(camelContext.getClassResolver());
                 }
             }
         }
-        return camelContext.bootstrapFactoryFinder;
+        return bootstrapFactoryFinder;
     }
 
     @Override
     public void setBootstrapFactoryFinder(FactoryFinder factoryFinder) {
-        camelContext.bootstrapFactoryFinder = factoryFinder;
+        bootstrapFactoryFinder = factoryFinder;
     }
 
     @Override
     public FactoryFinder getBootstrapFactoryFinder(String path) {
-        return camelContext.bootstrapFactories.computeIfAbsent(path, camelContext::createBootstrapFactoryFinder);
-    }
-
-    @Override
-    public FactoryFinderResolver getFactoryFinderResolver() {
-        if (camelContext.factoryFinderResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.factoryFinderResolver == null) {
-                    camelContext.factoryFinderResolver = camelContext.createFactoryFinderResolver();
-                }
-            }
-        }
-        return camelContext.factoryFinderResolver;
-    }
-
-    @Override
-    public void setFactoryFinderResolver(FactoryFinderResolver factoryFinderResolver) {
-        camelContext.factoryFinderResolver = camelContext.doAddService(factoryFinderResolver);
+        return bootstrapFactories.computeIfAbsent(path, camelContext::createBootstrapFactoryFinder);
     }
 
     @Override
     public FactoryFinder getFactoryFinder(String path) {
         return factories.computeIfAbsent(path, camelContext::createFactoryFinder);
-    }
-
-    @Override
-    public PackageScanClassResolver getPackageScanClassResolver() {
-        if (camelContext.packageScanClassResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.packageScanClassResolver == null) {
-                    setPackageScanClassResolver(camelContext.createPackageScanClassResolver());
-                }
-            }
-        }
-        return camelContext.packageScanClassResolver;
-    }
-
-    @Override
-    public void setPackageScanClassResolver(PackageScanClassResolver packageScanClassResolver) {
-        camelContext.packageScanClassResolver = camelContext.doAddService(packageScanClassResolver);
-    }
-
-    @Override
-    public PackageScanResourceResolver getPackageScanResourceResolver() {
-        if (camelContext.packageScanResourceResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.packageScanResourceResolver == null) {
-                    setPackageScanResourceResolver(camelContext.createPackageScanResourceResolver());
-                }
-            }
-        }
-        return camelContext.packageScanResourceResolver;
-    }
-
-    @Override
-    public void setPackageScanResourceResolver(PackageScanResourceResolver packageScanResourceResolver) {
-        camelContext.packageScanResourceResolver = camelContext.doAddService(packageScanResourceResolver);
-    }
-
-    @Override
-    public ModelJAXBContextFactory getModelJAXBContextFactory() {
-        if (camelContext.modelJAXBContextFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.modelJAXBContextFactory == null) {
-                    setModelJAXBContextFactory(camelContext.createModelJAXBContextFactory());
-                }
-            }
-        }
-        return camelContext.modelJAXBContextFactory;
-    }
-
-    @Override
-    public void setModelJAXBContextFactory(final ModelJAXBContextFactory modelJAXBContextFactory) {
-        camelContext.modelJAXBContextFactory = camelContext.doAddService(modelJAXBContextFactory);
-    }
-
-    @Override
-    public NodeIdFactory getNodeIdFactory() {
-        if (camelContext.nodeIdFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.nodeIdFactory == null) {
-                    setNodeIdFactory(camelContext.createNodeIdFactory());
-                }
-            }
-        }
-        return camelContext.nodeIdFactory;
-    }
-
-    @Override
-    public void setNodeIdFactory(NodeIdFactory idFactory) {
-        camelContext.nodeIdFactory = camelContext.doAddService(idFactory);
-    }
-
-    @Override
-    public ModelineFactory getModelineFactory() {
-        if (camelContext.modelineFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.modelineFactory == null) {
-                    setModelineFactory(camelContext.createModelineFactory());
-                }
-            }
-        }
-        return camelContext.modelineFactory;
-    }
-
-    @Override
-    public void setModelineFactory(ModelineFactory modelineFactory) {
-        camelContext.modelineFactory = camelContext.doAddService(modelineFactory);
-    }
-
-    @Override
-    public PeriodTaskResolver getPeriodTaskResolver() {
-        if (camelContext.periodTaskResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.periodTaskResolver == null) {
-                    setPeriodTaskResolver(camelContext.createPeriodTaskResolver());
-                }
-            }
-        }
-        return camelContext.periodTaskResolver;
-    }
-
-    @Override
-    public void setPeriodTaskResolver(PeriodTaskResolver periodTaskResolver) {
-        camelContext.periodTaskResolver = camelContext.doAddService(periodTaskResolver);
-    }
-
-    public PeriodTaskScheduler getPeriodTaskScheduler() {
-        if (camelContext.periodTaskScheduler == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.periodTaskScheduler == null) {
-                    setPeriodTaskScheduler(camelContext.createPeriodTaskScheduler());
-                }
-            }
-        }
-        return camelContext.periodTaskScheduler;
-    }
-
-    public void setPeriodTaskScheduler(PeriodTaskScheduler periodTaskScheduler) {
-        camelContext.periodTaskScheduler = camelContext.doAddService(periodTaskScheduler);
     }
 
     @Override
@@ -686,8 +398,8 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
 
         // preserve any existing event notifiers that may have been already added
         List<EventNotifier> notifiers = null;
-        if (camelContext.managementStrategy != null) {
-            notifiers = camelContext.managementStrategy.getEventNotifiers();
+        if (managementStrategy != null) {
+            notifiers = managementStrategy.getEventNotifiers();
         }
 
         try {
@@ -704,40 +416,6 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public AsyncProcessorAwaitManager getAsyncProcessorAwaitManager() {
-        if (camelContext.asyncProcessorAwaitManager == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.asyncProcessorAwaitManager == null) {
-                    setAsyncProcessorAwaitManager(camelContext.createAsyncProcessorAwaitManager());
-                }
-            }
-        }
-        return camelContext.asyncProcessorAwaitManager;
-    }
-
-    @Override
-    public void setAsyncProcessorAwaitManager(AsyncProcessorAwaitManager asyncProcessorAwaitManager) {
-        camelContext.asyncProcessorAwaitManager = camelContext.doAddService(asyncProcessorAwaitManager);
-    }
-
-    @Override
-    public BeanIntrospection getBeanIntrospection() {
-        if (camelContext.beanIntrospection == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.beanIntrospection == null) {
-                    setBeanIntrospection(camelContext.createBeanIntrospection());
-                }
-            }
-        }
-        return camelContext.beanIntrospection;
-    }
-
-    @Override
-    public void setBeanIntrospection(BeanIntrospection beanIntrospection) {
-        camelContext.beanIntrospection = camelContext.doAddService(beanIntrospection);
-    }
-
-    @Override
     public String getBasePackageScan() {
         return basePackageScan;
     }
@@ -745,55 +423,6 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     @Override
     public void setBasePackageScan(String basePackageScan) {
         this.basePackageScan = basePackageScan;
-    }
-
-    @Override
-    public DataFormatResolver getDataFormatResolver() {
-        if (camelContext.dataFormatResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.dataFormatResolver == null) {
-                    setDataFormatResolver(camelContext.createDataFormatResolver());
-                }
-            }
-        }
-        return camelContext.dataFormatResolver;
-    }
-
-    @Override
-    public void setDataFormatResolver(DataFormatResolver dataFormatResolver) {
-        camelContext.dataFormatResolver = camelContext.doAddService(dataFormatResolver);
-    }
-
-    @Override
-    public HealthCheckResolver getHealthCheckResolver() {
-        if (camelContext.healthCheckResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.healthCheckResolver == null) {
-                    setHealthCheckResolver(camelContext.createHealthCheckResolver());
-                }
-            }
-        }
-        return camelContext.healthCheckResolver;
-    }
-
-    @Override
-    public void setHealthCheckResolver(HealthCheckResolver healthCheckResolver) {
-        camelContext.healthCheckResolver = camelContext.doAddService(healthCheckResolver);
-    }
-
-    public DevConsoleResolver getDevConsoleResolver() {
-        if (camelContext.devConsoleResolver == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.devConsoleResolver == null) {
-                    setDevConsoleResolver(camelContext.createDevConsoleResolver());
-                }
-            }
-        }
-        return camelContext.devConsoleResolver;
-    }
-
-    public void setDevConsoleResolver(DevConsoleResolver devConsoleResolver) {
-        camelContext.devConsoleResolver = camelContext.doAddService(devConsoleResolver);
     }
 
     @Override
@@ -807,302 +436,114 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public ProcessorFactory getProcessorFactory() {
-        if (camelContext.processorFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.processorFactory == null) {
-                    setProcessorFactory(camelContext.createProcessorFactory());
-                }
-            }
-        }
-        return camelContext.processorFactory;
-    }
-
-    @Override
-    public void setProcessorFactory(ProcessorFactory processorFactory) {
-        camelContext.processorFactory = camelContext.doAddService(processorFactory);
-    }
-
-    @Override
-    public InternalProcessorFactory getInternalProcessorFactory() {
-        if (camelContext.internalProcessorFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.internalProcessorFactory == null) {
-                    setInternalProcessorFactory(camelContext.createInternalProcessorFactory());
-                }
-            }
-        }
-        return camelContext.internalProcessorFactory;
-    }
-
-    @Override
-    public void setInternalProcessorFactory(InternalProcessorFactory internalProcessorFactory) {
-        camelContext.internalProcessorFactory = camelContext.doAddService(internalProcessorFactory);
-    }
-
-    @Override
-    public InterceptEndpointFactory getInterceptEndpointFactory() {
-        if (camelContext.interceptEndpointFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.interceptEndpointFactory == null) {
-                    setInterceptEndpointFactory(camelContext.createInterceptEndpointFactory());
-                }
-            }
-        }
-        return camelContext.interceptEndpointFactory;
-    }
-
-    @Override
-    public void setInterceptEndpointFactory(InterceptEndpointFactory interceptEndpointFactory) {
-        camelContext.interceptEndpointFactory = camelContext.doAddService(interceptEndpointFactory);
-    }
-
-    @Override
-    public RouteFactory getRouteFactory() {
-        if (camelContext.routeFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.routeFactory == null) {
-                    setRouteFactory(camelContext.createRouteFactory());
-                }
-            }
-        }
-        return camelContext.routeFactory;
-    }
-
-    @Override
-    public void setRouteFactory(RouteFactory routeFactory) {
-        camelContext.routeFactory = routeFactory;
-    }
-
-    @Override
     public HeadersMapFactory getHeadersMapFactory() {
-        return camelContext.headersMapFactory;
+        return headersMapFactory;
     }
 
     @Override
     public void setHeadersMapFactory(HeadersMapFactory headersMapFactory) {
-        camelContext.headersMapFactory = camelContext.doAddService(headersMapFactory);
+        this.headersMapFactory = camelContext.getInternalServiceManager().addService(headersMapFactory);
     }
 
-    @Override
-    public RoutesLoader getRoutesLoader() {
-        if (camelContext.routesLoader == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.routesLoader == null) {
-                    setRoutesLoader(camelContext.createRoutesLoader());
+    void initEagerMandatoryServices(boolean caseInsensitive, Supplier<HeadersMapFactory> headersMapFactorySupplier) {
+        if (this.headersMapFactory == null) {
+            // we want headers map to be created as then JVM can optimize using it as we use it per exchange/message
+            synchronized (lock) {
+                if (this.headersMapFactory == null) {
+                    if (caseInsensitive) {
+                        // use factory to find the map factory to use
+                        setHeadersMapFactory(headersMapFactorySupplier.get());
+                    } else {
+                        // case sensitive so we can use hash map
+                        setHeadersMapFactory(new HashMapHeadersMapFactory());
+                    }
                 }
             }
         }
-        return camelContext.routesLoader;
-    }
-
-    @Override
-    public void setRoutesLoader(RoutesLoader routesLoader) {
-        camelContext.routesLoader = camelContext.doAddService(routesLoader);
-    }
-
-    @Override
-    public ResourceLoader getResourceLoader() {
-        if (camelContext.resourceLoader == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.resourceLoader == null) {
-                    setResourceLoader(camelContext.createResourceLoader());
-                }
-            }
-        }
-        return camelContext.resourceLoader;
-    }
-
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        camelContext.resourceLoader = camelContext.doAddService(resourceLoader);
-    }
-
-    public ModelToXMLDumper getModelToXMLDumper() {
-        if (camelContext.modelToXMLDumper == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.modelToXMLDumper == null) {
-                    setModelToXMLDumper(camelContext.createModelToXMLDumper());
-                }
-            }
-        }
-        return camelContext.modelToXMLDumper;
-    }
-
-    public void setModelToXMLDumper(ModelToXMLDumper modelToXMLDumper) {
-        camelContext.modelToXMLDumper = camelContext.doAddService(modelToXMLDumper);
-    }
-
-    public RestBindingJaxbDataFormatFactory getRestBindingJaxbDataFormatFactory() {
-        if (camelContext.restBindingJaxbDataFormatFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.restBindingJaxbDataFormatFactory == null) {
-                    setRestBindingJaxbDataFormatFactory(camelContext.createRestBindingJaxbDataFormatFactory());
-                }
-            }
-        }
-        return camelContext.restBindingJaxbDataFormatFactory;
-    }
-
-    public void setRestBindingJaxbDataFormatFactory(RestBindingJaxbDataFormatFactory restBindingJaxbDataFormatFactory) {
-        camelContext.restBindingJaxbDataFormatFactory = restBindingJaxbDataFormatFactory;
-    }
-
-    @Override
-    public RuntimeCamelCatalog getRuntimeCamelCatalog() {
-        if (camelContext.runtimeCamelCatalog == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.runtimeCamelCatalog == null) {
-                    setRuntimeCamelCatalog(camelContext.createRuntimeCamelCatalog());
-                }
-            }
-        }
-        return camelContext.runtimeCamelCatalog;
-    }
-
-    @Override
-    public void setRuntimeCamelCatalog(RuntimeCamelCatalog runtimeCamelCatalog) {
-        camelContext.runtimeCamelCatalog = camelContext.doAddService(runtimeCamelCatalog);
     }
 
     @Override
     public ExchangeFactory getExchangeFactory() {
-        if (camelContext.exchangeFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.exchangeFactory == null) {
+        if (exchangeFactory == null) {
+            synchronized (lock) {
+                if (exchangeFactory == null) {
                     setExchangeFactory(camelContext.createExchangeFactory());
                 }
             }
         }
-        return camelContext.exchangeFactory;
+        return exchangeFactory;
     }
 
     @Override
     public void setExchangeFactory(ExchangeFactory exchangeFactory) {
         // automatic inject camel context
         exchangeFactory.setCamelContext(camelContext);
-        camelContext.exchangeFactory = exchangeFactory;
+        this.exchangeFactory = exchangeFactory;
     }
 
     @Override
     public ExchangeFactoryManager getExchangeFactoryManager() {
-        if (camelContext.exchangeFactoryManager == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.exchangeFactoryManager == null) {
+        if (exchangeFactoryManager == null) {
+            synchronized (lock) {
+                if (exchangeFactoryManager == null) {
                     setExchangeFactoryManager(camelContext.createExchangeFactoryManager());
                 }
             }
         }
-        return camelContext.exchangeFactoryManager;
+        return exchangeFactoryManager;
     }
 
     @Override
     public void setExchangeFactoryManager(ExchangeFactoryManager exchangeFactoryManager) {
-        camelContext.exchangeFactoryManager = camelContext.doAddService(exchangeFactoryManager);
+        this.exchangeFactoryManager = camelContext.getInternalServiceManager().addService(exchangeFactoryManager);
     }
 
     @Override
     public ProcessorExchangeFactory getProcessorExchangeFactory() {
-        if (camelContext.processorExchangeFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.processorExchangeFactory == null) {
+        if (processorExchangeFactory == null) {
+            synchronized (lock) {
+                if (processorExchangeFactory == null) {
                     setProcessorExchangeFactory(camelContext.createProcessorExchangeFactory());
                 }
             }
         }
-        return camelContext.processorExchangeFactory;
+        return processorExchangeFactory;
     }
 
     @Override
     public void setProcessorExchangeFactory(ProcessorExchangeFactory processorExchangeFactory) {
         // automatic inject camel context
         processorExchangeFactory.setCamelContext(camelContext);
-        camelContext.processorExchangeFactory = processorExchangeFactory;
+        this.processorExchangeFactory = processorExchangeFactory;
     }
 
     @Override
     public ReactiveExecutor getReactiveExecutor() {
-        if (camelContext.reactiveExecutor == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.reactiveExecutor == null) {
+        if (reactiveExecutor == null) {
+            synchronized (lock) {
+                if (reactiveExecutor == null) {
                     setReactiveExecutor(camelContext.createReactiveExecutor());
                 }
             }
         }
-        return camelContext.reactiveExecutor;
+        return reactiveExecutor;
     }
 
     @Override
     public void setReactiveExecutor(ReactiveExecutor reactiveExecutor) {
         // special for executorServiceManager as want to stop it manually so
         // false in stopOnShutdown
-        camelContext.reactiveExecutor = camelContext.doAddService(reactiveExecutor, false);
-    }
-
-    @Override
-    public DeferServiceFactory getDeferServiceFactory() {
-        if (camelContext.deferServiceFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.deferServiceFactory == null) {
-                    setDeferServiceFactory(camelContext.createDeferServiceFactory());
-                }
-            }
-        }
-        return camelContext.deferServiceFactory;
-    }
-
-    public void setDeferServiceFactory(DeferServiceFactory deferServiceFactory) {
-        camelContext.deferServiceFactory = deferServiceFactory;
-    }
-
-    @Override
-    public AnnotationBasedProcessorFactory getAnnotationBasedProcessorFactory() {
-        if (camelContext.annotationBasedProcessorFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.annotationBasedProcessorFactory == null) {
-                    setAnnotationBasedProcessorFactory(camelContext.createAnnotationBasedProcessorFactory());
-                }
-            }
-        }
-        return camelContext.annotationBasedProcessorFactory;
-    }
-
-    public void setAnnotationBasedProcessorFactory(AnnotationBasedProcessorFactory annotationBasedProcessorFactory) {
-        camelContext.annotationBasedProcessorFactory = annotationBasedProcessorFactory;
-    }
-
-    @Override
-    public BeanProxyFactory getBeanProxyFactory() {
-        if (camelContext.beanProxyFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.beanProxyFactory == null) {
-                    camelContext.setBeanProxyFactory(camelContext.createBeanProxyFactory());
-                }
-            }
-        }
-        return camelContext.beanProxyFactory;
-    }
-
-    @Override
-    public BeanProcessorFactory getBeanProcessorFactory() {
-        if (camelContext.beanProcessorFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.beanProcessorFactory == null) {
-                    camelContext.setBeanProcessorFactory(camelContext.createBeanProcessorFactory());
-                }
-            }
-        }
-        return camelContext.beanProcessorFactory;
+        this.reactiveExecutor = camelContext.getInternalServiceManager().addService(reactiveExecutor, false);
     }
 
     @Override
     public RouteController getInternalRouteController() {
-        return camelContext.internalRouteController;
+        return internalRouteController;
     }
 
     @Override
     public EndpointUriFactory getEndpointUriFactory(String scheme) {
-        return getUriFactoryResolver().resolveFactory(scheme, camelContext);
+        return PluginHelper.getUriFactoryResolver(this).resolveFactory(scheme, camelContext);
     }
 
     @Override
@@ -1116,23 +557,6 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
     }
 
     @Override
-    public CliConnectorFactory getCliConnectorFactory() {
-        if (camelContext.cliConnectorFactory == null) {
-            synchronized (camelContext.lock) {
-                if (camelContext.cliConnectorFactory == null) {
-                    setCliConnectorFactory(camelContext.createCliConnectorFactory());
-                }
-            }
-        }
-        return camelContext.cliConnectorFactory;
-    }
-
-    @Override
-    public void setCliConnectorFactory(CliConnectorFactory cliConnectorFactory) {
-        camelContext.cliConnectorFactory = cliConnectorFactory;
-    }
-
-    @Override
     public void addRoute(Route route) {
         camelContext.addRoute(route);
     }
@@ -1142,15 +566,62 @@ class DefaultCamelContextExtension implements ExtendedCamelContext {
         camelContext.removeRoute(route);
     }
 
+    @Override
     public Processor createErrorHandler(Route route, Processor processor) throws Exception {
         return camelContext.createErrorHandler(route, processor);
     }
 
+    @Override
     public void disposeModel() {
         camelContext.disposeModel();
     }
 
+    @Override
     public String getTestExcludeRoutes() {
         return camelContext.getTestExcludeRoutes();
+    }
+
+    @Override
+    public PluginManager getPluginManager() {
+        return pluginManager;
+    }
+
+    ManagementStrategy getManagementStrategy() {
+        return managementStrategy;
+    }
+
+    void setManagementStrategy(ManagementStrategy managementStrategy) {
+        this.managementStrategy = managementStrategy;
+    }
+
+    @Override
+    public <T> T getContextPlugin(Class<T> type) {
+        T ret = pluginManager.getContextPlugin(type);
+
+        // Note: this is because of interfaces like Model which are still tightly coupled with the context
+        if (ret == null) {
+            if (type.isInstance(camelContext)) {
+                return type.cast(camelContext);
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
+    public <T> void addContextPlugin(Class<T> type, T module) {
+        final T addedModule = camelContext.getInternalServiceManager().addService(module);
+        pluginManager.addContextPlugin(type, addedModule);
+    }
+
+    @Override
+    public <T> void lazyAddContextPlugin(Class<T> type, Supplier<T> module) {
+        pluginManager.lazyAddContextPlugin(type, () -> lazyInitAndAdd(module));
+    }
+
+    private <T> T lazyInitAndAdd(Supplier<T> supplier) {
+        T module = supplier.get();
+
+        return camelContext.getInternalServiceManager().addService(module);
     }
 }

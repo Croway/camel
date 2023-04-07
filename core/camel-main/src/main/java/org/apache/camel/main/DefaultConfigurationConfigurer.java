@@ -42,6 +42,7 @@ import org.apache.camel.model.Model;
 import org.apache.camel.model.ModelCamelContext;
 import org.apache.camel.model.ModelLifecycleStrategy;
 import org.apache.camel.spi.AsyncProcessorAwaitManager;
+import org.apache.camel.spi.BeanIntrospection;
 import org.apache.camel.spi.ClassResolver;
 import org.apache.camel.spi.CliConnectorFactory;
 import org.apache.camel.spi.ContextReloadStrategy;
@@ -80,6 +81,7 @@ import org.apache.camel.support.ClassicUuidGenerator;
 import org.apache.camel.support.DefaultContextReloadStrategy;
 import org.apache.camel.support.DefaultUuidGenerator;
 import org.apache.camel.support.OffUuidGenerator;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.RouteWatcherReloadStrategy;
 import org.apache.camel.support.ShortUuidGenerator;
 import org.apache.camel.support.SimpleUuidGenerator;
@@ -135,12 +137,13 @@ public final class DefaultConfigurationConfigurer {
         ecc.getStartupStepRecorder().setRecordingProfile(config.getStartupRecorderProfile());
 
         ecc.setLightweight(config.isLightweight());
-        ecc.getBeanPostProcessor().setEnabled(config.isBeanPostProcessorEnabled());
-        ecc.getBeanIntrospection().setExtendedStatistics(config.isBeanIntrospectionExtendedStatistics());
+        PluginHelper.getBeanPostProcessor(ecc).setEnabled(config.isBeanPostProcessorEnabled());
+        final BeanIntrospection beanIntrospection = PluginHelper.getBeanIntrospection(ecc);
+        beanIntrospection.setExtendedStatistics(config.isBeanIntrospectionExtendedStatistics());
         if (config.getBeanIntrospectionLoggingLevel() != null) {
-            ecc.getBeanIntrospection().setLoggingLevel(config.getBeanIntrospectionLoggingLevel());
+            beanIntrospection.setLoggingLevel(config.getBeanIntrospectionLoggingLevel());
         }
-        ecc.getBeanIntrospection().afterPropertiesConfigured(camelContext);
+        beanIntrospection.afterPropertiesConfigured(camelContext);
 
         if ("pooled".equals(config.getExchangeFactory())) {
             ecc.setExchangeFactory(new PooledExchangeFactory());
@@ -179,7 +182,8 @@ public final class DefaultConfigurationConfigurer {
         camelContext.getInflightRepository().setInflightBrowseEnabled(config.isInflightRepositoryBrowseEnabled());
 
         if (config.getLogDebugMaxChars() != 0) {
-            camelContext.getGlobalOptions().put(Exchange.LOG_DEBUG_BODY_MAX_CHARS, "" + config.getLogDebugMaxChars());
+            camelContext.getGlobalOptions().put(Exchange.LOG_DEBUG_BODY_MAX_CHARS,
+                    Integer.toString(config.getLogDebugMaxChars()));
         }
 
         // stream caching
@@ -310,7 +314,8 @@ public final class DefaultConfigurationConfigurer {
         }
 
         if (config.getRouteFilterIncludePattern() != null || config.getRouteFilterExcludePattern() != null) {
-            camelContext.getExtension(Model.class).setRouteFilterPattern(config.getRouteFilterIncludePattern(),
+            camelContext.getCamelContextExtension().getContextPlugin(Model.class).setRouteFilterPattern(
+                    config.getRouteFilterIncludePattern(),
                     config.getRouteFilterExcludePattern());
         }
 
@@ -365,7 +370,7 @@ public final class DefaultConfigurationConfigurer {
         }
         CliConnectorFactory ccf = getSingleBeanOfType(registry, CliConnectorFactory.class);
         if (ccf != null) {
-            ecc.getCamelContextExtension().setCliConnectorFactory(ccf);
+            ecc.getCamelContextExtension().addContextPlugin(CliConnectorFactory.class, ccf);
         }
         PropertiesComponent pc = getSingleBeanOfType(registry, PropertiesComponent.class);
         if (pc != null) {
@@ -373,7 +378,7 @@ public final class DefaultConfigurationConfigurer {
         }
         BacklogTracer bt = getSingleBeanOfType(registry, BacklogTracer.class);
         if (bt != null) {
-            ecc.setExtension(BacklogTracer.class, bt);
+            ecc.getCamelContextExtension().addContextPlugin(BacklogTracer.class, bt);
         }
         InflightRepository ir = getSingleBeanOfType(registry, InflightRepository.class);
         if (ir != null) {
@@ -381,7 +386,7 @@ public final class DefaultConfigurationConfigurer {
         }
         AsyncProcessorAwaitManager apam = getSingleBeanOfType(registry, AsyncProcessorAwaitManager.class);
         if (apam != null) {
-            ecc.getCamelContextExtension().setAsyncProcessorAwaitManager(apam);
+            ecc.getCamelContextExtension().addContextPlugin(AsyncProcessorAwaitManager.class, apam);
         }
         ManagementStrategy ms = getSingleBeanOfType(registry, ManagementStrategy.class);
         if (ms != null) {
@@ -397,7 +402,7 @@ public final class DefaultConfigurationConfigurer {
         }
         UnitOfWorkFactory uowf = getSingleBeanOfType(registry, UnitOfWorkFactory.class);
         if (uowf != null) {
-            ecc.getCamelContextExtension().setUnitOfWorkFactory(uowf);
+            ecc.getCamelContextExtension().addContextPlugin(UnitOfWorkFactory.class, uowf);
         }
         RuntimeEndpointRegistry rer = getSingleBeanOfType(registry, RuntimeEndpointRegistry.class);
         if (rer != null) {
@@ -405,7 +410,7 @@ public final class DefaultConfigurationConfigurer {
         }
         ModelJAXBContextFactory mjcf = getSingleBeanOfType(registry, ModelJAXBContextFactory.class);
         if (mjcf != null) {
-            ecc.getCamelContextExtension().setModelJAXBContextFactory(mjcf);
+            ecc.getCamelContextExtension().addContextPlugin(ModelJAXBContextFactory.class, mjcf);
         }
         ClassResolver cr = getSingleBeanOfType(registry, ClassResolver.class);
         if (cr != null) {
@@ -413,7 +418,7 @@ public final class DefaultConfigurationConfigurer {
         }
         FactoryFinderResolver ffr = getSingleBeanOfType(registry, FactoryFinderResolver.class);
         if (ffr != null) {
-            ecc.getCamelContextExtension().setFactoryFinderResolver(ffr);
+            ecc.getCamelContextExtension().addContextPlugin(FactoryFinderResolver.class, ffr);
         }
         RouteController rc = getSingleBeanOfType(registry, RouteController.class);
         if (rc != null) {
@@ -433,7 +438,7 @@ public final class DefaultConfigurationConfigurer {
         }
         ProcessorFactory pf = getSingleBeanOfType(registry, ProcessorFactory.class);
         if (pf != null) {
-            ecc.getCamelContextExtension().setProcessorFactory(pf);
+            ecc.getCamelContextExtension().addContextPlugin(ProcessorFactory.class, pf);
         }
         Debugger debugger = getSingleBeanOfType(registry, Debugger.class);
         if (debugger != null) {
@@ -441,7 +446,7 @@ public final class DefaultConfigurationConfigurer {
         }
         NodeIdFactory nif = getSingleBeanOfType(registry, NodeIdFactory.class);
         if (nif != null) {
-            ecc.getCamelContextExtension().setNodeIdFactory(nif);
+            ecc.getCamelContextExtension().addContextPlugin(NodeIdFactory.class, nif);
         }
         MessageHistoryFactory mhf = getSingleBeanOfType(registry, MessageHistoryFactory.class);
         if (mhf != null) {
@@ -530,7 +535,7 @@ public final class DefaultConfigurationConfigurer {
         if (healthCheckRegistry != null) {
             healthCheckRegistry.setCamelContext(camelContext);
             LOG.debug("Using HealthCheckRegistry: {}", healthCheckRegistry);
-            camelContext.setExtension(HealthCheckRegistry.class, healthCheckRegistry);
+            camelContext.getCamelContextExtension().addContextPlugin(HealthCheckRegistry.class, healthCheckRegistry);
         } else {
             // okay attempt to inject this camel context into existing health check (if any)
             healthCheckRegistry = HealthCheckRegistry.get(camelContext);
@@ -552,7 +557,7 @@ public final class DefaultConfigurationConfigurer {
         if (devConsoleRegistry != null) {
             devConsoleRegistry.setCamelContext(camelContext);
             LOG.debug("Using DevConsoleRegistry: {}", devConsoleRegistry);
-            camelContext.setExtension(DevConsoleRegistry.class, devConsoleRegistry);
+            camelContext.getCamelContextExtension().addContextPlugin(DevConsoleRegistry.class, devConsoleRegistry);
         } else {
             // okay attempt to inject this camel context into existing dev console (if any)
             devConsoleRegistry = DevConsoleRegistry.get(camelContext);

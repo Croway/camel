@@ -21,12 +21,20 @@ public class VertxWebsocketComponentConfigurer extends PropertyConfigurerSupport
     public boolean configure(CamelContext camelContext, Object obj, String name, Object value, boolean ignoreCase) {
         VertxWebsocketComponent target = (VertxWebsocketComponent) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
+        case "alloworiginheader":
+        case "allowOriginHeader": target.setAllowOriginHeader(property(camelContext, boolean.class, value)); return true;
         case "autowiredenabled":
         case "autowiredEnabled": target.setAutowiredEnabled(property(camelContext, boolean.class, value)); return true;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": target.setBridgeErrorHandler(property(camelContext, boolean.class, value)); return true;
+        case "defaulthost":
+        case "defaultHost": target.setDefaultHost(property(camelContext, java.lang.String.class, value)); return true;
+        case "defaultport":
+        case "defaultPort": target.setDefaultPort(property(camelContext, int.class, value)); return true;
         case "lazystartproducer":
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
+        case "originheaderurl":
+        case "originHeaderUrl": target.setOriginHeaderUrl(property(camelContext, java.lang.String.class, value)); return true;
         case "router": target.setRouter(property(camelContext, io.vertx.ext.web.Router.class, value)); return true;
         case "useglobalsslcontextparameters":
         case "useGlobalSslContextParameters": target.setUseGlobalSslContextParameters(property(camelContext, boolean.class, value)); return true;
@@ -40,12 +48,20 @@ public class VertxWebsocketComponentConfigurer extends PropertyConfigurerSupport
     @Override
     public Class<?> getOptionType(String name, boolean ignoreCase) {
         switch (ignoreCase ? name.toLowerCase() : name) {
+        case "alloworiginheader":
+        case "allowOriginHeader": return boolean.class;
         case "autowiredenabled":
         case "autowiredEnabled": return boolean.class;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return boolean.class;
+        case "defaulthost":
+        case "defaultHost": return java.lang.String.class;
+        case "defaultport":
+        case "defaultPort": return int.class;
         case "lazystartproducer":
         case "lazyStartProducer": return boolean.class;
+        case "originheaderurl":
+        case "originHeaderUrl": return java.lang.String.class;
         case "router": return io.vertx.ext.web.Router.class;
         case "useglobalsslcontextparameters":
         case "useGlobalSslContextParameters": return boolean.class;
@@ -60,12 +76,20 @@ public class VertxWebsocketComponentConfigurer extends PropertyConfigurerSupport
     public Object getOptionValue(Object obj, String name, boolean ignoreCase) {
         VertxWebsocketComponent target = (VertxWebsocketComponent) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
+        case "alloworiginheader":
+        case "allowOriginHeader": return target.isAllowOriginHeader();
         case "autowiredenabled":
         case "autowiredEnabled": return target.isAutowiredEnabled();
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return target.isBridgeErrorHandler();
+        case "defaulthost":
+        case "defaultHost": return target.getDefaultHost();
+        case "defaultport":
+        case "defaultPort": return target.getDefaultPort();
         case "lazystartproducer":
         case "lazyStartProducer": return target.isLazyStartProducer();
+        case "originheaderurl":
+        case "originHeaderUrl": return target.getOriginHeaderUrl();
         case "router": return target.getRouter();
         case "useglobalsslcontextparameters":
         case "useGlobalSslContextParameters": return target.isUseGlobalSslContextParameters();

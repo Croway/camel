@@ -44,6 +44,10 @@ import org.apache.camel.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.camel.component.vertx.websocket.VertxWebsocketConstants.DEFAULT_VERTX_CLIENT_WSS_PORT;
+import static org.apache.camel.component.vertx.websocket.VertxWebsocketConstants.DEFAULT_VERTX_CLIENT_WS_PORT;
+import static org.apache.camel.component.vertx.websocket.VertxWebsocketConstants.ORIGIN_HTTP_HEADER_NAME;
+
 @UriEndpoint(firstVersion = "3.5.0", scheme = "vertx-websocket", title = "Vert.x WebSocket",
              syntax = "vertx-websocket:host:port/path", category = { Category.WEBSOCKET },
              headersClass = VertxWebsocketConstants.class, lenientProperties = true)
@@ -129,31 +133,18 @@ public class VertxWebsocketEndpoint extends DefaultEndpoint {
         }
 
         if (webSocket == null || webSocket.isClosed()) {
-            HttpClientOptions options = configuration.getClientOptions();
+            HttpClientOptions clientOptions = configuration.getClientOptions();
 
-            if (options == null) {
-                options = new HttpClientOptions();
+            if (clientOptions == null) {
+                clientOptions = new HttpClientOptions();
             }
 
             SSLContextParameters sslContextParameters = configuration.getSslContextParameters();
             if (sslContextParameters != null) {
-                VertxHelper.setupSSLOptions(getCamelContext(), sslContextParameters, options);
+                VertxHelper.setupSSLOptions(getCamelContext(), sslContextParameters, clientOptions);
             }
 
-            URI websocketURI = configuration.getWebsocketURI();
-            WebSocketConnectOptions connectOptions = new WebSocketConnectOptions();
-            connectOptions.setHost(websocketURI.getHost());
-            connectOptions.setURI(URISupport.pathAndQueryOf(websocketURI));
-            connectOptions.setSsl(options.isSsl() || websocketURI.getScheme().length() == 3);
-            if (websocketURI.getPort() > 0) {
-                connectOptions.setPort(websocketURI.getPort());
-            }
-
-            String subProtocols = configuration.getClientSubProtocols();
-            if (ObjectHelper.isNotEmpty(subProtocols)) {
-                connectOptions.setSubProtocols(Arrays.asList(subProtocols.split(",")));
-            }
-
+            WebSocketConnectOptions connectOptions = getWebSocketConnectOptions(clientOptions);
             CompletableFuture<WebSocket> future = new CompletableFuture<>();
             client.webSocket(connectOptions, result -> {
                 if (!result.failed()) {
@@ -164,13 +155,41 @@ public class VertxWebsocketEndpoint extends DefaultEndpoint {
                     future.completeExceptionally(result.cause());
                 }
             });
-            webSocket = future.get(options.getConnectTimeout(), TimeUnit.MILLISECONDS);
+            webSocket = future.get(clientOptions.getConnectTimeout(), TimeUnit.MILLISECONDS);
         }
         return webSocket;
     }
 
     protected WebSocket getWebSocket(Exchange exchange) throws Exception {
         return getWebSocket().exceptionHandler(event -> exchange.setException(event.getCause()));
+    }
+
+    protected WebSocketConnectOptions getWebSocketConnectOptions(HttpClientOptions options) {
+        URI websocketURI = configuration.getWebsocketURI();
+        WebSocketConnectOptions connectOptions = new WebSocketConnectOptions();
+        connectOptions.setHost(websocketURI.getHost());
+        connectOptions.setURI(URISupport.pathAndQueryOf(websocketURI));
+        connectOptions.setSsl(options.isSsl() || websocketURI.getScheme().length() == 3);
+
+        if (websocketURI.getPort() > 0) {
+            connectOptions.setPort(websocketURI.getPort());
+        } else {
+            connectOptions.setPort(connectOptions.isSsl() ? DEFAULT_VERTX_CLIENT_WSS_PORT : DEFAULT_VERTX_CLIENT_WS_PORT);
+        }
+
+        String subProtocols = configuration.getClientSubProtocols();
+        if (ObjectHelper.isNotEmpty(subProtocols)) {
+            connectOptions.setSubProtocols(Arrays.asList(subProtocols.split(",")));
+        }
+
+        connectOptions.setAllowOriginHeader(configuration.isAllowOriginHeader());
+
+        String defaultOriginHeader = configuration.getOriginHeaderUrl();
+        if (ObjectHelper.isNotEmpty(defaultOriginHeader)) {
+            connectOptions.addHeader(ORIGIN_HTTP_HEADER_NAME, defaultOriginHeader);
+        }
+
+        return connectOptions;
     }
 
     protected Map<VertxWebsocketHostKey, VertxWebsocketHost> getVertxHostRegistry() {
@@ -184,7 +203,8 @@ public class VertxWebsocketEndpoint extends DefaultEndpoint {
         Map<VertxWebsocketHostKey, VertxWebsocketHost> registry = getVertxHostRegistry();
         for (VertxWebsocketHost host : registry.values()) {
             Map<String, ServerWebSocket> hostPeers = host.getConnectedPeers();
-            if (hostPeers.containsKey(connectionKey) && host.getPort() == getConfiguration().getWebsocketURI().getPort()) {
+            if (hostPeers.containsKey(connectionKey) && host.isManagedHost(getConfiguration().getWebsocketURI().getHost())
+                    && host.isManagedPort(getConfiguration().getWebsocketURI().getPort())) {
                 return hostPeers.get(connectionKey);
             }
         }
@@ -198,15 +218,11 @@ public class VertxWebsocketEndpoint extends DefaultEndpoint {
         return getVertxHostRegistry()
                 .values()
                 .stream()
-                .filter(host -> host.getPort() == getConfiguration().getWebsocketURI().getPort())
+                .filter(host -> host.isManagedHost(getConfiguration().getWebsocketURI().getHost()))
+                .filter(host -> host.isManagedPort(getConfiguration().getWebsocketURI().getPort()))
                 .flatMap(host -> host.getConnectedPeers().entrySet().stream())
-                .filter(entry -> entry.getValue().path().equals(getConfiguration().getWebsocketURI().getPath()))
+                .filter(entry -> VertxWebsocketHelper.webSocketHostPathMatches(entry.getValue().path(),
+                        getConfiguration().getWebsocketURI().getPath()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    protected boolean isManagedPort() {
-        return getVertxHostRegistry().values()
-                .stream()
-                .anyMatch(host -> host.getPort() == getConfiguration().getWebsocketURI().getPort());
     }
 }

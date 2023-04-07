@@ -22,6 +22,7 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.health.HealthCheck;
 import org.apache.camel.health.HealthCheckHelper;
 import org.apache.camel.health.HealthCheckRegistry;
+import org.apache.camel.support.PluginHelper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -36,8 +37,7 @@ public class MyFooHealthCheckTest extends ContextTestSupport {
     public void testMyFoo() throws Exception {
         context.start();
 
-        HealthCheck hc
-                = context.getCamelContextExtension().getHealthCheckResolver().resolveHealthCheck("myfoo");
+        HealthCheck hc = PluginHelper.getHealthCheckResolver(context).resolveHealthCheck("myfoo");
         Assertions.assertNotNull(hc);
 
         Assertions.assertEquals("acme", hc.getGroup());
@@ -53,11 +53,10 @@ public class MyFooHealthCheckTest extends ContextTestSupport {
     public void testAddToRegistry() throws Exception {
         context.start();
 
-        HealthCheck hc
-                = context.getCamelContextExtension().getHealthCheckResolver().resolveHealthCheck("myfoo");
+        HealthCheck hc = PluginHelper.getHealthCheckResolver(context).resolveHealthCheck("myfoo");
         Assertions.assertNotNull(hc);
 
-        HealthCheckRegistry hcr = context.getExtension(HealthCheckRegistry.class);
+        HealthCheckRegistry hcr = context.getCamelContextExtension().getContextPlugin(HealthCheckRegistry.class);
         hcr.register(hc);
 
         Collection<HealthCheck.Result> col = HealthCheckHelper.invoke(context);

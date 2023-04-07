@@ -270,6 +270,16 @@ public class RestOpenApiSupport {
             openApiConfig.setSchemes(new String[] { "http" });
         }
 
+        String defaultConsumes = (String) config.get("api.default.consumes");
+        if (defaultConsumes != null) {
+            openApiConfig.setDefaultConsumes(defaultConsumes);
+        }
+
+        String defaultProduces = (String) config.get("api.default.produces");
+        if (defaultProduces != null) {
+            openApiConfig.setDefaultProduces(defaultProduces);
+        }
+
         String version = (String) config.get("api.version");
         String title = (String) config.get("api.title");
         String description = (String) config.get("api.description");
@@ -403,7 +413,7 @@ public class RestOpenApiSupport {
                 Object dump = io.apicurio.datamodels.Library.writeNode(openApi);
                 byte[] bytes = mapper.writeValueAsBytes(dump);
                 int len = bytes.length;
-                response.setHeader(Exchange.CONTENT_LENGTH, "" + len);
+                response.setHeader(Exchange.CONTENT_LENGTH, Integer.toString(len));
 
                 response.writeBytes(bytes);
             } else {
@@ -429,7 +439,7 @@ public class RestOpenApiSupport {
                 byte[] bytes = new YAMLMapper().writeValueAsString(node).getBytes();
 
                 int len = bytes.length;
-                response.setHeader(Exchange.CONTENT_LENGTH, "" + len);
+                response.setHeader(Exchange.CONTENT_LENGTH, Integer.toString(len));
 
                 response.writeBytes(bytes);
             }

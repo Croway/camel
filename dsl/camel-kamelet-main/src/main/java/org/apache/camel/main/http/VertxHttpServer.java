@@ -92,7 +92,7 @@ public final class VertxHttpServer {
 
     private static void doRegisterServer(CamelContext camelContext, int port, boolean stub) {
         // need to capture we use http-server
-        CamelJBangSettingsHelper.writeSettings("camel.jbang.platform-http.port", "" + port);
+        CamelJBangSettingsHelper.writeSettings("camel.jbang.platform-http.port", Integer.toString(port));
 
         if (stub) {
             return;
@@ -197,7 +197,7 @@ public final class VertxHttpServer {
 
                 ctx.response().putHeader("content-type", "text/plain");
 
-                DevConsoleRegistry dcr = context.getExtension(DevConsoleRegistry.class);
+                DevConsoleRegistry dcr = context.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class);
                 if (dcr == null || !dcr.isEnabled()) {
                     ctx.end("Developer Console is not enabled");
                     return;
@@ -290,7 +290,7 @@ public final class VertxHttpServer {
         dev.handler(handler);
         devSub.handler(handler);
 
-        phc.addHttpEndpoint("/q/dev", null);
+        phc.addHttpEndpoint("/q/dev", null, null);
     }
 
     public static void registerHealthCheck(CamelContext camelContext) {
@@ -366,7 +366,7 @@ public final class VertxHttpServer {
         live.handler(handler);
         ready.handler(handler);
 
-        phc.addHttpEndpoint("/q/health", null);
+        phc.addHttpEndpoint("/q/health", null, null);
     }
 
     private static void healthCheckStatus(StringBuilder sb, boolean up) {

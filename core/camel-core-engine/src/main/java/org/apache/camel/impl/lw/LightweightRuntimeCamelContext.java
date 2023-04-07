@@ -92,6 +92,7 @@ import org.apache.camel.spi.Validator;
 import org.apache.camel.spi.ValidatorRegistry;
 import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.NormalizedUri;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
@@ -419,16 +420,6 @@ public class LightweightRuntimeCamelContext implements CamelContext, CatalogCame
     }
 
     @Override
-    public <T> T getExtension(Class<T> type) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> void setExtension(Class<T> type, T module) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean isVetoStarted() {
         throw new UnsupportedOperationException();
     }
@@ -738,7 +729,7 @@ public class LightweightRuntimeCamelContext implements CamelContext, CatalogCame
                 }
             }
             // language not known or not singleton, then use resolver
-            answer = lwCamelContextExtension.getLanguageResolver().resolveLanguage(language, reference);
+            answer = PluginHelper.getLanguageResolver(lwCamelContextExtension).resolveLanguage(language, reference);
             // inject CamelContext if aware
             if (answer != null) {
                 CamelContextAware.trySetCamelContext(answer, reference);
@@ -1325,12 +1316,6 @@ public class LightweightRuntimeCamelContext implements CamelContext, CatalogCame
 
     @Override
     public String addRouteFromTemplate(String routeId, String routeTemplateId, String prefixId, Map<String, Object> parameters)
-            throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String addRouteFromTemplate(String routeId, String routeTemplateId, RouteTemplateContext routeTemplateContext)
             throws Exception {
         throw new UnsupportedOperationException();
     }

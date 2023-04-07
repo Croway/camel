@@ -30,6 +30,7 @@ import org.apache.camel.spi.Resource;
 import org.apache.camel.spi.annotations.DevConsole;
 import org.apache.camel.support.LoggerHelper;
 import org.apache.camel.support.PatternHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.console.AbstractDevConsole;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.StringHelper;
@@ -61,8 +62,7 @@ public class SourceDevConsole extends AbstractDevConsole {
                 loc = LoggerHelper.stripSourceLocationLineNumber(loc);
                 StringBuilder code = new StringBuilder();
                 try {
-                    Resource resource = getCamelContext().getCamelContextExtension().getResourceLoader()
-                            .resolveResource(loc);
+                    Resource resource = PluginHelper.getResourceLoader(getCamelContext()).resolveResource(loc);
                     if (resource != null) {
                         if (sb.length() > 0) {
                             sb.append("\n");
@@ -132,7 +132,7 @@ public class SourceDevConsole extends AbstractDevConsole {
         String limit = (String) options.get(LIMIT);
         final int max = limit == null ? Integer.MAX_VALUE : Integer.parseInt(limit);
 
-        ManagedCamelContext mcc = getCamelContext().getExtension(ManagedCamelContext.class);
+        ManagedCamelContext mcc = getCamelContext().getCamelContextExtension().getContextPlugin(ManagedCamelContext.class);
         if (mcc != null) {
             List<Route> routes = getCamelContext().getRoutes();
             routes.sort((o1, o2) -> o1.getRouteId().compareToIgnoreCase(o2.getRouteId()));

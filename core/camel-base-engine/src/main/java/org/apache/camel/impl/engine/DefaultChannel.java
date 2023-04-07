@@ -40,6 +40,7 @@ import org.apache.camel.spi.MessageHistoryFactory;
 import org.apache.camel.spi.Tracer;
 import org.apache.camel.spi.WrapAwareProcessor;
 import org.apache.camel.support.OrderedComparator;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.service.ServiceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -223,7 +224,7 @@ public class DefaultChannel extends CamelInternalProcessor implements Channel {
             }
             if (!(wrapped instanceof WrapAwareProcessor)) {
                 // wrap the target so it becomes a service and we can manage its lifecycle
-                wrapped = camelContext.getCamelContextExtension().getInternalProcessorFactory()
+                wrapped = PluginHelper.getInternalProcessorFactory(camelContext)
                         .createWrapProcessor(wrapped, target);
             }
             target = wrapped;
@@ -275,13 +276,13 @@ public class DefaultChannel extends CamelInternalProcessor implements Channel {
             }
         }
         if (tracer == null) {
-            tracer = camelContext.getExtension(BacklogTracer.class);
+            tracer = camelContext.getCamelContextExtension().getContextPlugin(BacklogTracer.class);
         }
         if (tracer == null) {
             tracer = BacklogTracer.createTracer(camelContext);
             tracer.setEnabled(camelContext.isBacklogTracing() != null && camelContext.isBacklogTracing());
             tracer.setStandby(camelContext.isBacklogTracingStandby());
-            camelContext.setExtension(BacklogTracer.class, tracer);
+            camelContext.getCamelContextExtension().addContextPlugin(BacklogTracer.class, tracer);
         }
         return tracer;
     }

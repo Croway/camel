@@ -50,6 +50,7 @@ import org.apache.camel.spi.PropertiesComponent;
 import org.apache.camel.spi.PropertyConfigurer;
 import org.apache.camel.spi.Registry;
 import org.apache.camel.support.CamelContextHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ObjectHelper;
@@ -190,11 +191,11 @@ public class CamelPostProcessorHelper implements CamelContextAware {
         // 2. then the getter with Endpoint as postfix
         // 3. then if start with on then try step 1 and 2 again, but omit the on prefix
         try {
-            Object value = getCamelContext().getCamelContextExtension().getBeanIntrospection().getOrElseProperty(bean,
+            Object value = PluginHelper.getBeanIntrospection(getCamelContext()).getOrElseProperty(bean,
                     propertyName, null, false);
             if (value == null) {
                 // try endpoint as postfix
-                value = getCamelContext().getCamelContextExtension().getBeanIntrospection().getOrElseProperty(bean,
+                value = PluginHelper.getBeanIntrospection(getCamelContext()).getOrElseProperty(bean,
                         propertyName + "Endpoint", null, false);
             }
             if (value == null && propertyName.startsWith("on")) {
@@ -253,8 +254,7 @@ public class CamelPostProcessorHelper implements CamelContextAware {
                     // lets create a proxy
                     try {
                         // use proxy service
-                        BeanProxyFactory factory
-                                = endpoint.getCamelContext().getCamelContextExtension().getBeanProxyFactory();
+                        BeanProxyFactory factory = PluginHelper.getBeanProxyFactory(endpoint.getCamelContext());
                         return factory.createProxy(endpoint, binding, type);
                     } catch (Exception e) {
                         throw createProxyInstantiationRuntimeException(type, endpoint, e);
@@ -418,7 +418,7 @@ public class CamelPostProcessorHelper implements CamelContextAware {
         String[] names = new String[] {
                 type.getName() + "-configurer", type.getSimpleName() + "-configurer", rootKey + "-configurer" };
         for (String n : names) {
-            configurer = ecc.getCamelContextExtension().getConfigurerResolver().resolvePropertyConfigurer(n, ecc);
+            configurer = PluginHelper.getConfigurerResolver(ecc).resolvePropertyConfigurer(n, ecc);
             if (configurer != null) {
                 break;
             }
@@ -590,8 +590,7 @@ public class CamelPostProcessorHelper implements CamelContextAware {
      */
     protected Producer createInjectionProducer(Endpoint endpoint, Object bean, String beanName) {
         try {
-            return endpoint.getCamelContext().getCamelContextExtension().getDeferServiceFactory()
-                    .createProducer(endpoint);
+            return PluginHelper.getDeferServiceFactory(endpoint.getCamelContext()).createProducer(endpoint);
         } catch (Exception e) {
             throw RuntimeCamelException.wrapRuntimeCamelException(e);
         }

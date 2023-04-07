@@ -81,7 +81,7 @@ public class LoggerAction extends ActionBaseCommand {
         for (long pid : pids) {
             JsonObject root = new JsonObject();
             root.put("action", "logger");
-            File f = getActionFile("" + pid);
+            File f = getActionFile(Long.toString(pid));
             root.put("command", "set-logging-level");
             root.put("logger-name", logger);
             root.put("logging-level", loggingLevel);
@@ -101,7 +101,7 @@ public class LoggerAction extends ActionBaseCommand {
                     JsonObject root = loadStatus(ph.pid());
                     if (root != null) {
                         Row row = new Row();
-                        row.pid = "" + ph.pid();
+                        row.pid = Long.toString(ph.pid());
                         row.uptime = extractSince(ph);
                         row.ago = TimeUtils.printSince(row.uptime);
                         JsonObject context = (JsonObject) root.get("context");

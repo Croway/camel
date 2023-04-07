@@ -114,9 +114,12 @@ import org.apache.camel.spi.ErrorHandlerAware;
 import org.apache.camel.spi.ExecutorServiceManager;
 import org.apache.camel.spi.IdAware;
 import org.apache.camel.spi.InterceptStrategy;
+import org.apache.camel.spi.NodeIdFactory;
+import org.apache.camel.spi.ProcessorFactory;
 import org.apache.camel.spi.ReifierStrategy;
 import org.apache.camel.spi.RouteIdAware;
 import org.apache.camel.support.CamelContextHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -571,8 +574,9 @@ public abstract class ProcessorReifier<T extends ProcessorDefinition<?>> extends
     protected Processor createChildProcessor(boolean mandatory) throws Exception {
         Processor children = null;
         // at first use custom factory
-        if (camelContext.getCamelContextExtension().getProcessorFactory() != null) {
-            children = camelContext.getCamelContextExtension().getProcessorFactory().createChildProcessor(route,
+        final ProcessorFactory processorFactory = PluginHelper.getProcessorFactory(camelContext);
+        if (processorFactory != null) {
+            children = processorFactory.createChildProcessor(route,
                     definition, mandatory);
         }
         // fallback to default implementation if factory did not create the
@@ -626,7 +630,7 @@ public abstract class ProcessorReifier<T extends ProcessorDefinition<?>> extends
     protected Channel wrapChannel(Processor processor, ProcessorDefinition<?> child, Boolean inheritErrorHandler)
             throws Exception {
         // put a channel in between this and each output to control the route flow logic
-        Channel channel = camelContext.getCamelContextExtension().getInternalProcessorFactory()
+        Channel channel = PluginHelper.getInternalProcessorFactory(camelContext)
                 .createChannel(camelContext);
 
         // add interceptor strategies to the channel must be in this order:
@@ -814,13 +818,14 @@ public abstract class ProcessorReifier<T extends ProcessorDefinition<?>> extends
 
     protected Processor createProcessor(ProcessorDefinition<?> output) throws Exception {
         // ensure node has id assigned
-        String outputId = output.idOrCreate(camelContext.getCamelContextExtension().getNodeIdFactory());
+        String outputId = output.idOrCreate(camelContext.getCamelContextExtension().getContextPlugin(NodeIdFactory.class));
         StartupStep step = camelContext.getCamelContextExtension().getStartupStepRecorder().beginStep(ProcessorReifier.class, outputId, "Create processor");
 
         Processor processor = null;
         // at first use custom factory
-        if (camelContext.getCamelContextExtension().getProcessorFactory() != null) {
-            processor = camelContext.getCamelContextExtension().getProcessorFactory().createProcessor(route, output);
+        final ProcessorFactory processorFactory = PluginHelper.getProcessorFactory(camelContext);
+        if (processorFactory != null) {
+            processor = processorFactory.createProcessor(route, output);
         }
         // fallback to default implementation if factory did not create the processor
         if (processor == null) {
@@ -841,8 +846,9 @@ public abstract class ProcessorReifier<T extends ProcessorDefinition<?>> extends
         preCreateProcessor();
 
         // at first use custom factory
-        if (camelContext.getCamelContextExtension().getProcessorFactory() != null) {
-            processor = camelContext.getCamelContextExtension().getProcessorFactory().createProcessor(route, definition);
+        final ProcessorFactory processorFactory = PluginHelper.getProcessorFactory(camelContext);
+        if (processorFactory != null) {
+            processor = processorFactory.createProcessor(route, definition);
         }
         // fallback to default implementation if factory did not create the
         // processor
@@ -883,7 +889,7 @@ public abstract class ProcessorReifier<T extends ProcessorDefinition<?>> extends
     }
 
     protected String getId(OptionalIdentifiedDefinition<?> def) {
-        return def.idOrCreate(camelContext.getCamelContextExtension().getNodeIdFactory());
+        return def.idOrCreate(camelContext.getCamelContextExtension().getContextPlugin(NodeIdFactory.class));
     }
 
     /**

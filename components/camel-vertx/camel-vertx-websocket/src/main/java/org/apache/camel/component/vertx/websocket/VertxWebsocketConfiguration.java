@@ -64,6 +64,10 @@ public class VertxWebsocketConfiguration {
     private SSLContextParameters sslContextParameters;
     @UriParam(label = "consumer")
     private boolean fireWebSocketConnectionEvents;
+    @UriParam(label = "producer,consumer", defaultValue = "true")
+    private boolean allowOriginHeader = true;
+    @UriParam(label = "producer,consumer")
+    private String originHeaderUrl;
 
     /**
      * The WebSocket URI address to use.
@@ -182,8 +186,9 @@ public class VertxWebsocketConfiguration {
     }
 
     /**
-     * To send to all websocket subscribers. Can be used to configure on endpoint level, instead of having to use the
-     * {@code VertxWebsocketConstants.SEND_TO_ALL} header on the message.
+     * To send to all websocket subscribers. Can be used to configure at the endpoint level, instead of providing the
+     * {@code VertxWebsocketConstants.SEND_TO_ALL} header on the message. Note that when using this option, the host
+     * name specified for the vertx-websocket producer URI must match one used for an existing vertx-websocket consumer.
      */
     public void setSendToAll(boolean sendToAll) {
         this.sendToAll = sendToAll;
@@ -246,5 +251,28 @@ public class VertxWebsocketConfiguration {
 
     public boolean isFireWebSocketConnectionEvents() {
         return fireWebSocketConnectionEvents;
+    }
+
+    public boolean isAllowOriginHeader() {
+        return allowOriginHeader;
+    }
+
+    /**
+     * Whether the WebSocket client should add the Origin header to the WebSocket handshake request.
+     */
+    public void setAllowOriginHeader(boolean allowOriginHeader) {
+        this.allowOriginHeader = allowOriginHeader;
+    }
+
+    public String getOriginHeaderUrl() {
+        return originHeaderUrl;
+    }
+
+    /**
+     * The value of the Origin header that the WebSocket client should use on the WebSocket handshake request. When not
+     * specified, the WebSocket client will automatically determine the value for the Origin from the request URL.
+     */
+    public void setOriginHeaderUrl(String originHeaderUrl) {
+        this.originHeaderUrl = originHeaderUrl;
     }
 }

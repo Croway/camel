@@ -26,6 +26,7 @@ import org.apache.camel.component.aws.secretsmanager.vault.CloudTrailReloadTrigg
 import org.apache.camel.spi.PeriodTaskScheduler;
 import org.apache.camel.spi.PropertiesFunction;
 import org.apache.camel.spi.annotations.DevConsole;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.console.AbstractDevConsole;
 import org.apache.camel.util.TimeUtils;
 import org.apache.camel.util.json.JsonArray;
@@ -54,7 +55,7 @@ public class SecretsDevConsole extends AbstractDevConsole {
         }
         AwsVaultConfiguration aws = getCamelContext().getVaultConfiguration().getAwsVaultConfiguration();
         if (aws != null && aws.isRefreshEnabled()) {
-            PeriodTaskScheduler scheduler = getCamelContext().getCamelContextExtension().getPeriodTaskScheduler();
+            PeriodTaskScheduler scheduler = PluginHelper.getPeriodTaskScheduler(getCamelContext());
             secretsRefreshTask = scheduler.getTaskByType(CloudTrailReloadTriggerTask.class);
         }
     }
@@ -68,6 +69,8 @@ public class SecretsDevConsole extends AbstractDevConsole {
             sb.append(String.format("\n    Region: %s", propertiesFunction.getRegion()));
             if (propertiesFunction.isDefaultCredentialsProvider()) {
                 sb.append("\n    Login: DefaultCredentialsProvider");
+            } else if (propertiesFunction.isProfleCredentialsProvider()) {
+                sb.append("\n    Login: ProfileCredentialsProvider");
             } else {
                 sb.append("\n    Login: Access and Secret Keys");
             }
@@ -110,6 +113,8 @@ public class SecretsDevConsole extends AbstractDevConsole {
             root.put("region", propertiesFunction.getRegion());
             if (propertiesFunction.isDefaultCredentialsProvider()) {
                 root.put("login", "DefaultCredentialsProvider");
+            } else if (propertiesFunction.isProfleCredentialsProvider()) {
+                root.put("login", "ProfileCredentialsProvider");
             } else {
                 root.put("login", "Access and Secret Keys");
             }

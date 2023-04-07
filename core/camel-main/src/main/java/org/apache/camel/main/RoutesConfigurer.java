@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.RouteConfigurationsBuilder;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.RuntimeCamelException;
@@ -31,6 +30,7 @@ import org.apache.camel.spi.ModelineFactory;
 import org.apache.camel.spi.Resource;
 import org.apache.camel.spi.RoutesLoader;
 import org.apache.camel.support.OrderedComparator;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.util.StopWatch;
 import org.apache.camel.util.TimeUtils;
 import org.slf4j.Logger;
@@ -153,8 +153,7 @@ public class RoutesConfigurer {
 
         if (getBasePackageScan() != null) {
             String[] pkgs = getBasePackageScan().split(",");
-            Set<Class<?>> set = camelContext.getCamelContextExtension()
-                    .getPackageScanClassResolver()
+            Set<Class<?>> set = PluginHelper.getPackageScanClassResolver(camelContext)
                     .findImplementations(RoutesBuilder.class, pkgs);
             for (Class<?> routeClazz : set) {
                 Object builder = camelContext.getInjector().newInstance(routeClazz);
@@ -262,8 +261,7 @@ public class RoutesConfigurer {
             throw RuntimeCamelException.wrapRuntimeException(e);
         }
 
-        ExtendedCamelContext ecc = camelContext.getCamelContextExtension();
-        ModelineFactory factory = ecc.getModelineFactory();
+        ModelineFactory factory = PluginHelper.getModelineFactory(camelContext);
 
         for (Resource resource : resources) {
             LOG.debug("Parsing modeline: {}", resource);
@@ -272,7 +270,7 @@ public class RoutesConfigurer {
         // the resource may also have additional configurations which we need to detect via pre-parsing
         for (Resource resource : resources) {
             LOG.debug("Pre-parsing: {}", resource);
-            RoutesLoader loader = camelContext.getCamelContextExtension().getRoutesLoader();
+            RoutesLoader loader = PluginHelper.getRoutesLoader(camelContext);
             loader.preParseRoute(resource);
         }
 

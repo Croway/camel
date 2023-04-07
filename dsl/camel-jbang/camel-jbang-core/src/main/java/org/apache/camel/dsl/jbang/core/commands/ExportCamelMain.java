@@ -107,7 +107,7 @@ class ExportCamelMain extends Export {
         // gather dependencies
         Set<String> deps = resolveDependencies(settings, profile);
         if ("maven".equals(buildTool)) {
-            createPom(settings, new File(BUILD_DIR, "pom.xml"), deps, packageName);
+            createMavenPom(settings, new File(BUILD_DIR, "pom.xml"), deps, packageName);
             if (mavenWrapper) {
                 copyMavenWrapper();
             }
@@ -123,15 +123,17 @@ class ExportCamelMain extends Export {
         return 0;
     }
 
-    private void createPom(File settings, File pom, Set<String> deps, String packageName) throws Exception {
+    private void createMavenPom(File settings, File pom, Set<String> deps, String packageName) throws Exception {
         String[] ids = gav.split(":");
 
         InputStream is = ExportCamelMain.class.getClassLoader().getResourceAsStream("templates/main-pom.tmpl");
         String context = IOHelper.loadText(is);
         IOHelper.close(is);
 
-        CamelCatalog catalog = new DefaultCamelCatalog();
-        String camelVersion = catalog.getCatalogVersion();
+        if (camelVersion == null) {
+            CamelCatalog catalog = new DefaultCamelCatalog();
+            camelVersion = catalog.getCatalogVersion();
+        }
 
         context = context.replaceFirst("\\{\\{ \\.GroupId }}", ids[0]);
         context = context.replaceFirst("\\{\\{ \\.ArtifactId }}", ids[1]);
@@ -143,28 +145,11 @@ class ExportCamelMain extends Export {
         Properties prop = new CamelCaseOrderedProperties();
         RuntimeUtil.loadProperties(prop, settings);
         String repos = getMavenRepos(settings, prop, camelVersion);
-        if (repos == null) {
+        if (repos == null || repos.isEmpty()) {
             context = context.replaceFirst("\\{\\{ \\.MavenRepositories }}", "");
         } else {
-            int i = 1;
-            StringBuilder sb = new StringBuilder();
-            sb.append("    <repositories>\n");
-            for (String repo : repos.split(",")) {
-                sb.append("        <repository>\n");
-                sb.append("            <id>custom").append(i++).append("</id>\n");
-                sb.append("            <url>").append(repo).append("</url>\n");
-                if (repo.contains("snapshots")) {
-                    sb.append("            <releases>\n");
-                    sb.append("                <enabled>false</enabled>\n");
-                    sb.append("            </releases>\n");
-                    sb.append("            <snapshots>\n");
-                    sb.append("                <enabled>true</enabled>\n");
-                    sb.append("            </snapshots>\n");
-                }
-                sb.append("        </repository>\n");
-            }
-            sb.append("    </repositories>\n");
-            context = context.replaceFirst("\\{\\{ \\.MavenRepositories }}", sb.toString());
+            String s = mavenRepositoriesAsPomXml(repos);
+            context = context.replaceFirst("\\{\\{ \\.MavenRepositories }}", s);
         }
 
         List<MavenGav> gavs = new ArrayList<>();

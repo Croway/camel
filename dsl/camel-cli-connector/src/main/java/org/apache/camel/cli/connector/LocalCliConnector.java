@@ -47,6 +47,7 @@ import org.apache.camel.spi.CliConnectorFactory;
 import org.apache.camel.spi.ContextReloadStrategy;
 import org.apache.camel.support.DefaultContextReloadStrategy;
 import org.apache.camel.support.PatternHelper;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
 import org.apache.camel.util.FileUtil;
@@ -255,26 +256,29 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
                 }
                 reloader.onReload("Camel CLI");
             } else if ("reset-stats".equals(action)) {
-                ManagedCamelContext mcc = camelContext.getExtension(ManagedCamelContext.class);
+                ManagedCamelContext mcc = camelContext.getCamelContextExtension().getContextPlugin(ManagedCamelContext.class);
                 if (mcc != null) {
                     mcc.getManagedCamelContext().reset(true);
                 }
             } else if ("thread-dump".equals(action)) {
-                DevConsole dc = camelContext.getExtension(DevConsoleRegistry.class).resolveById("thread");
+                DevConsole dc = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class)
+                        .resolveById("thread");
                 if (dc != null) {
                     JsonObject json = (JsonObject) dc.call(DevConsole.MediaType.JSON, Map.of("stackTrace", "true"));
                     LOG.trace("Updating output file: {}", outputFile);
                     IOHelper.writeText(json.toJson(), outputFile);
                 }
             } else if ("top-processors".equals(action)) {
-                DevConsole dc = camelContext.getExtension(DevConsoleRegistry.class).resolveById("top");
+                DevConsole dc
+                        = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class).resolveById("top");
                 if (dc != null) {
                     JsonObject json = (JsonObject) dc.call(DevConsole.MediaType.JSON, Map.of(Exchange.HTTP_PATH, "/*"));
                     LOG.trace("Updating output file: {}", outputFile);
                     IOHelper.writeText(json.toJson(), outputFile);
                 }
             } else if ("source".equals(action)) {
-                DevConsole dc = camelContext.getExtension(DevConsoleRegistry.class).resolveById("source");
+                DevConsole dc = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class)
+                        .resolveById("source");
                 if (dc != null) {
                     String filter = root.getString("filter");
                     JsonObject json = (JsonObject) dc.call(DevConsole.MediaType.JSON, Map.of("filter", filter));
@@ -282,7 +286,8 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
                     IOHelper.writeText(json.toJson(), outputFile);
                 }
             } else if ("route-controller".equals(action)) {
-                DevConsole dc = camelContext.getExtension(DevConsoleRegistry.class).resolveById("route-controller");
+                DevConsole dc = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class)
+                        .resolveById("route-controller");
                 if (dc != null) {
                     String stacktrace = root.getString("stacktrace");
                     JsonObject json = (JsonObject) dc.call(DevConsole.MediaType.JSON, Map.of("stacktrace", stacktrace));
@@ -344,7 +349,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
             root.put("runtime", rc);
 
-            DevConsoleRegistry dcr = camelContext.getExtension(DevConsoleRegistry.class);
+            DevConsoleRegistry dcr = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class);
             if (dcr != null) {
                 // collect details via console
                 DevConsole dc = dcr.resolveById("context");
@@ -421,7 +426,8 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
                         root.put("fault-tolerance", json);
                     }
                 }
-                DevConsole dc12 = camelContext.getExtension(DevConsoleRegistry.class).resolveById("trace");
+                DevConsole dc12 = camelContext.getCamelContextExtension().getContextPlugin(DevConsoleRegistry.class)
+                        .resolveById("trace");
                 if (dc12 != null) {
                     JsonObject json = (JsonObject) dc12.call(DevConsole.MediaType.JSON);
                     JsonArray arr = json.getCollection("traces");
@@ -432,7 +438,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
                             return jo.getLong("uid") <= traceFilePos;
                         });
                     }
-                    if (!arr.isEmpty()) {
+                    if (arr != null && !arr.isEmpty()) {
                         // store traces in a special file
                         LOG.trace("Updating trace file: {}", traceFile);
                         String data = json.toJson() + System.lineSeparator();
@@ -534,8 +540,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
     private JsonObject collectVaults() {
         JsonObject root = new JsonObject();
         // aws-secrets is optional
-        Optional<DevConsole> dcAws = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("aws-secrets");
+        Optional<DevConsole> dcAws = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("aws-secrets");
         if (dcAws.isPresent()) {
             JsonObject json = (JsonObject) dcAws.get().call(DevConsole.MediaType.JSON);
             if (json != null) {
@@ -543,8 +548,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
         }
         // gcp-secrets is optional
-        Optional<DevConsole> dcGcp = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("gcp-secrets");
+        Optional<DevConsole> dcGcp = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("gcp-secrets");
         if (dcGcp.isPresent()) {
             JsonObject json = (JsonObject) dcGcp.get().call(DevConsole.MediaType.JSON);
             if (json != null) {
@@ -552,8 +556,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
         }
         // azure-secrets is optional
-        Optional<DevConsole> dcAzure = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("azure-secrets");
+        Optional<DevConsole> dcAzure = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("azure-secrets");
         if (dcAzure.isPresent()) {
             JsonObject json = (JsonObject) dcAzure.get().call(DevConsole.MediaType.JSON);
             if (json != null) {
@@ -568,8 +571,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
 
         // platform-http is optional
         if (camelContext.hasComponent("platform-http") != null) {
-            Optional<DevConsole> dc = camelContext.getCamelContextExtension()
-                    .getDevConsoleResolver().lookupDevConsole("platform-http");
+            Optional<DevConsole> dc = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("platform-http");
             if (dc.isPresent()) {
                 JsonObject json = (JsonObject) dc.get().call(DevConsole.MediaType.JSON);
                 if (json != null) {
@@ -578,8 +580,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
         }
         // netty is optional
-        Optional<DevConsole> dc = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("netty");
+        Optional<DevConsole> dc = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("netty");
         if (dc.isPresent()) {
             JsonObject json = (JsonObject) dc.get().call(DevConsole.MediaType.JSON);
             if (json != null) {
@@ -587,8 +588,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
         }
         // mina is optional
-        dc = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("mina");
+        dc = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("mina");
         if (dc.isPresent()) {
             JsonObject json = (JsonObject) dc.get().call(DevConsole.MediaType.JSON);
             if (json != null) {
@@ -596,8 +596,7 @@ public class LocalCliConnector extends ServiceSupport implements CliConnector, C
             }
         }
         // mllp is optional
-        dc = camelContext.getCamelContextExtension()
-                .getDevConsoleResolver().lookupDevConsole("mllp");
+        dc = PluginHelper.getDevConsoleResolver(camelContext).lookupDevConsole("mllp");
         if (dc.isPresent()) {
             JsonObject json = (JsonObject) dc.get().call(DevConsole.MediaType.JSON);
             if (json != null) {

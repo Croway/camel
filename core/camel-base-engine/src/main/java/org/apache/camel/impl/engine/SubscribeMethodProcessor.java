@@ -31,6 +31,7 @@ import org.apache.camel.Predicate;
 import org.apache.camel.Processor;
 import org.apache.camel.spi.Language;
 import org.apache.camel.support.AsyncProcessorSupport;
+import org.apache.camel.support.PluginHelper;
 import org.apache.camel.support.builder.PredicateBuilder;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.util.ObjectHelper;
@@ -54,11 +55,11 @@ public final class SubscribeMethodProcessor extends AsyncProcessorSupport implem
     }
 
     public void addMethod(final Object pojo, final Method method, final Endpoint endpoint, String predicate) throws Exception {
-        Processor answer = endpoint.getCamelContext().getCamelContextExtension()
-                .getBeanProcessorFactory().createBeanProcessor(endpoint.getCamelContext(), pojo, method);
+        Processor answer = PluginHelper.getBeanProcessorFactory(endpoint.getCamelContext())
+                .createBeanProcessor(endpoint.getCamelContext(), pojo, method);
 
         // must ensure the consumer is being executed in an unit of work so synchronization callbacks etc is invoked
-        answer = endpoint.getCamelContext().getCamelContextExtension().getInternalProcessorFactory()
+        answer = PluginHelper.getInternalProcessorFactory(endpoint.getCamelContext())
                 .addUnitOfWorkProcessorAdvice(endpoint.getCamelContext(), answer, null);
         Predicate p;
         if (ObjectHelper.isEmpty(predicate)) {

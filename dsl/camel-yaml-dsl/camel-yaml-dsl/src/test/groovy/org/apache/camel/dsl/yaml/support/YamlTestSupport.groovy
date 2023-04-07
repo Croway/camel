@@ -30,6 +30,8 @@ import org.apache.camel.impl.DefaultCamelContext
 import org.apache.camel.model.RouteTemplateDefinition
 import org.apache.camel.spi.HasCamelContext
 import org.apache.camel.spi.Resource
+import org.apache.camel.spi.ResourceLoader
+import org.apache.camel.support.PluginHelper
 import org.apache.camel.support.ResourceHelper
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -57,7 +59,7 @@ class YamlTestSupport extends Specification implements HasCamelContext {
             }
         }
 
-        context.routesLoader.loadRoutes(resources)
+        PluginHelper.getRoutesLoader(context).loadRoutes(resources)
     }
 
     def addTemplate(String name, @DelegatesTo(RouteTemplateDefinition) Closure<?> closure) {
@@ -113,7 +115,7 @@ class YamlTestSupport extends Specification implements HasCamelContext {
     def loadKamelets(String... resources) {
         int index = 0
 
-        context.routesLoader.loadRoutes(
+        PluginHelper.getRoutesLoader(context).loadRoutes(
             resources.collect {
                 it -> ResourceHelper.fromString("route-${index++}.kamelet.yaml", it.stripIndent())
             }
@@ -123,7 +125,7 @@ class YamlTestSupport extends Specification implements HasCamelContext {
     def loadIntegrations(String... resources) {
         int index = 0
 
-        context.routesLoader.loadRoutes(
+        PluginHelper.getRoutesLoader(context).loadRoutes(
             resources.collect {
                 it -> ResourceHelper.fromString("integration-${index++}.yaml", it.stripIndent())
             }
@@ -133,7 +135,7 @@ class YamlTestSupport extends Specification implements HasCamelContext {
     def loadBindings(String... resources) {
         int index = 0
 
-        context.routesLoader.loadRoutes(
+        PluginHelper.getRoutesLoader(context).loadRoutes(
             resources.collect {
                 it -> ResourceHelper.fromString("binding-${index++}.yaml", it.stripIndent())
             }
