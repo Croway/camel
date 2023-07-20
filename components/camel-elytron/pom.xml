@@ -34,6 +34,8 @@
     <properties>
         <label>security</label>
         <firstVersion>3.1.0</firstVersion>
+        <wildfly-elytron>2.2.1.Final</wildfly-elytron>
+        <elytron-web>4.0.0.Final</elytron-web>
     </properties>
 
     <dependencies>
@@ -73,14 +75,14 @@
             <artifactId>jackson-jakarta-rs-json-provider</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
-            <version>${json-api}</version>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <version>${jakarta-json-api-version}</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-            <version>${glassfish-javax-json}</version>
+            <groupId>org.eclipse</groupId>
+            <artifactId>yasson</artifactId>
+            <version>${yasson-version}</version>
         </dependency>
 
         <dependency>
