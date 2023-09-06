@@ -41,7 +41,7 @@ public class AbstractExchangeTest {
             super(context);
         }
 
-        @Override
+//        @Override
         AbstractExchange newCopy() {
             return new CustomAbstractExchange(this);
         }
