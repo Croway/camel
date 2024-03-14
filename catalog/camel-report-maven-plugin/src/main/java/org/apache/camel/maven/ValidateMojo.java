@@ -186,6 +186,8 @@ public class ValidateMojo extends AbstractExecMojo {
     @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
     private RepositorySystemSession repositorySystemSession;
 
+    private static List<CamelEndpointDetails> endpoints = new ArrayList<>();
+
     @Override
     public void execute() throws MojoExecutionException {
         CamelCatalog catalog = new DefaultCamelCatalog();
@@ -387,7 +389,6 @@ public class ValidateMojo extends AbstractExecMojo {
     }
 
     protected void doExecuteRoutes(CamelCatalog catalog) throws MojoExecutionException {
-        List<CamelEndpointDetails> endpoints = new ArrayList<>();
         List<CamelSimpleExpressionDetails> simpleExpressions = new ArrayList<>();
         List<CamelRouteDetails> routeIds = new ArrayList<>();
         Set<File> javaFiles = new LinkedHashSet<>();
