@@ -18,6 +18,7 @@ package org.apache.camel.component.grpc;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -27,6 +28,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.AvailablePortFinder;
 import org.apache.camel.test.junit5.CamelTestSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,9 +79,13 @@ public class GrpcProducerStreamingTest extends CamelTestSupport {
 
         context().stop();
 
-        assertNotNull(pingPongServer.getLastStreamRequests());
-        assertListSize(pingPongServer.getLastStreamRequests(), 1);
-        assertListSize(pingPongServer.getLastStreamRequests().get(0), messageCount);
+        Awaitility
+            .await().atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> {
+                assertNotNull(pingPongServer.getLastStreamRequests());
+                assertListSize(pingPongServer.getLastStreamRequests(), 1);
+                assertListSize(pingPongServer.getLastStreamRequests().get(0), messageCount);
+            });
     }
 
     @Test
