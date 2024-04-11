@@ -255,7 +255,7 @@
         <jboss-logging-version>3.5.3.Final</jboss-logging-version>
         <jboss-marshalling-version>1.4.10.Final</jboss-marshalling-version>
         <jboss-transaction-spi.version>7.6.1.Final</jboss-transaction-spi.version>
-        <jboss-xnio-version>3.3.8.Final</jboss-xnio-version>
+        <jboss-xnio-version>3.8.8.Final</jboss-xnio-version>
         <jcache-version>1.1.1</jcache-version>
         <jcr-version>2.0</jcr-version>
         <jedis-client-version>5.1.0</jedis-client-version>
@@ -454,7 +454,7 @@
         <tika-version>2.9.1</tika-version>
         <twilio-version>9.16.0</twilio-version>
         <twitter4j-version>4.1.2</twitter4j-version>
-        <undertow-version>2.3.10.SP1-redhat-00001</undertow-version>
+        <undertow-version>2.3.12.Final</undertow-version>
         <univocity-parsers-version>2.9.1</univocity-parsers-version>
         <validation-api-version>2.0.1.Final</validation-api-version>
         <vavr-version>0.10.4</vavr-version>
