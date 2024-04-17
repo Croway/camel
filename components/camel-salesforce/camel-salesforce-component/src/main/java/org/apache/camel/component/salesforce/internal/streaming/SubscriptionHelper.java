@@ -16,10 +16,12 @@
  */
 package org.apache.camel.component.salesforce.internal.streaming;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.CookieStore;
+import java.net.URI;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,6 +44,8 @@ import org.cometd.client.BayeuxClient.State;
 import org.cometd.client.http.jetty.JettyHttpClientTransport;
 import org.cometd.client.transport.ClientTransport;
 import org.eclipse.jetty.client.Request;
+import org.eclipse.jetty.http.HttpCookie;
+import org.eclipse.jetty.http.HttpCookieStore;
 import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -393,6 +397,9 @@ public class SubscriptionHelper extends ServiceSupport {
             session.login(null);
         }
 
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookieStore httpCookieStore = new HttpCookieStore.Default();
+
         ClientTransport transport = new JettyHttpClientTransport(options, httpClient) {
             @Override
             protected void customize(Request request) {
@@ -409,6 +416,27 @@ public class SubscriptionHelper extends ServiceSupport {
                 }
                 String finalAccessToken = new String(accessToken);
                 request.headers(h -> h.add(HttpHeader.AUTHORIZATION, "OAuth " + finalAccessToken));
+            }
+
+            @Override
+            protected void storeCookies(URI uri, Map<String, List<String>> cookies) {
+                try {
+                    CookieManager cookieManager = new CookieManager(cookieStore, CookiePolicy.ACCEPT_ALL);
+                    cookieManager.put(uri, cookies);
+
+                    for (java.net.HttpCookie httpCookie : cookieManager.getCookieStore().getCookies()) {
+                        httpCookieStore.add(uri, HttpCookie.from(httpCookie));
+                    }
+                } catch (IOException x) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Could not parse cookies", x);
+                    }
+                }
+            }
+
+            @Override
+            protected HttpCookieStore getHttpCookieStore() {
+                return httpCookieStore;
             }
         };
 
