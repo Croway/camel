@@ -16,18 +16,8 @@
  */
 package org.apache.camel.component.salesforce;
 
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.camel.AsyncProcessor;
-import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangeExtension;
-import org.apache.camel.ExtendedCamelContext;
+import org.apache.camel.*;
 import org.apache.camel.component.salesforce.api.dto.PlatformEvent;
 import org.apache.camel.component.salesforce.internal.streaming.SubscriptionHelper;
 import org.apache.camel.spi.ClassResolver;
@@ -41,14 +31,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class StreamingApiConsumerTest {
@@ -186,7 +176,7 @@ public class StreamingApiConsumerTest {
         data.put("schema", "30H2pgzuWcF844p26Ityvg");
 
         final Map<String, Object> payload = new HashMap<>();
-        payload.put("Test_Field__c", "abc");
+        payload.put("eventData", Map.of("Test_Field__c", "abc"));
         payload.put("CreatedById", "00541000002WYFpAAO");
         payload.put("CreatedDate", "2018-07-06T12:41:04Z");
         data.put("payload", payload);
