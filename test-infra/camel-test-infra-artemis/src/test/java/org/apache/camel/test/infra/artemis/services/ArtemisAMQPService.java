@@ -19,6 +19,7 @@ package org.apache.camel.test.infra.artemis.services;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.auto.service.AutoService;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
@@ -33,6 +34,7 @@ import org.apache.camel.test.infra.artemis.common.ArtemisProperties;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@AutoService(ArtemisService.class)
 public class ArtemisAMQPService extends AbstractArtemisEmbeddedService {
 
     private String brokerURL;

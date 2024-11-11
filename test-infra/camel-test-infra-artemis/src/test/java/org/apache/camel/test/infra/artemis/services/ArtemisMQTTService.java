@@ -16,12 +16,14 @@
  */
 package org.apache.camel.test.infra.artemis.services;
 
+import com.google.auto.service.AutoService;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@AutoService(ArtemisService.class)
 public class ArtemisMQTTService extends AbstractArtemisEmbeddedService {
 
     private String brokerURL;

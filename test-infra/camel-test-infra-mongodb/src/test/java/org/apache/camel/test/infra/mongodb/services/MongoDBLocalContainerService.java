@@ -17,6 +17,7 @@
 
 package org.apache.camel.test.infra.mongodb.services;
 
+import com.google.auto.service.AutoService;
 import org.apache.camel.test.infra.common.LocalPropertyResolver;
 import org.apache.camel.test.infra.common.services.ContainerService;
 import org.apache.camel.test.infra.mongodb.common.MongoDBProperties;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
+@AutoService(MongoDBService.class)
 public class MongoDBLocalContainerService implements MongoDBService, ContainerService<MongoDBContainer> {
     private static final Logger LOG = LoggerFactory.getLogger(MongoDBLocalContainerService.class);
     private static final int DEFAULT_MONGODB_PORT = 27017;

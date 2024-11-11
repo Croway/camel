@@ -16,6 +16,7 @@
  */
 package org.apache.camel.test.infra.mosquitto.services;
 
+import com.google.auto.service.AutoService;
 import org.apache.camel.test.infra.common.LocalPropertyResolver;
 import org.apache.camel.test.infra.common.services.ContainerService;
 import org.apache.camel.test.infra.mosquitto.common.MosquittoProperties;
@@ -26,6 +27,7 @@ import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+@AutoService(MosquittoService.class)
 public class MosquittoLocalContainerService implements MosquittoService, ContainerService<GenericContainer> {
     public static final String CONTAINER_NAME = "mosquitto";
     public static final int CONTAINER_PORT = 1883;

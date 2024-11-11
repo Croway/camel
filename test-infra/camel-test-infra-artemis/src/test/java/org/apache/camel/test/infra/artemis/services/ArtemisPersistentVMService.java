@@ -16,6 +16,7 @@
  */
 package org.apache.camel.test.infra.artemis.services;
 
+import com.google.auto.service.AutoService;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.JournalType;
@@ -24,6 +25,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@AutoService(ArtemisService.class)
 public class ArtemisPersistentVMService extends AbstractArtemisEmbeddedService {
 
     private String brokerURL;

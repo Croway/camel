@@ -25,10 +25,11 @@ import org.slf4j.LoggerFactory;
 
 public final class ArtemisServiceFactory {
 
-    public static class SingletonArtemisService extends SingletonService<ArtemisService> implements ArtemisService {
+    public static class SingletonArtemisService extends SingletonService<ArtemisAbstractService>
+            implements ArtemisAbstractService {
         private static final Logger LOG = LoggerFactory.getLogger(SingletonArtemisService.class);
 
-        public SingletonArtemisService(ArtemisService service, String name) {
+        public SingletonArtemisService(ArtemisAbstractService service, String name) {
             super(service, name);
         }
 
@@ -69,7 +70,7 @@ public final class ArtemisServiceFactory {
         }
 
         @Override
-        public ArtemisService getService() {
+        public ArtemisAbstractService getService() {
             return super.getService();
         }
 
