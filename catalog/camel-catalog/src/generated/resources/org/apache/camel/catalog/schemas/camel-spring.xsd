@@ -7959,7 +7959,7 @@ This should only be enabled when desired to be used. Default value: false
           <xs:annotation>
             <xs:documentation xml:lang="en">
 <![CDATA[
-To enable pretty printing output nicely formatted. Is by default false. Default value: false
+To enable pretty printing output nicely formatted. Is by default false. Default value: true
 ]]>
             </xs:documentation>
           </xs:annotation>
