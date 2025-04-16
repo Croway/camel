@@ -25,6 +25,7 @@ import java.io.Serializable;
 import org.apache.camel.Converter;
 import org.apache.camel.Exchange;
 import org.apache.camel.TypeConverter;
+import org.apache.camel.spi.Synchronization;
 import org.apache.camel.spi.TypeConverterRegistry;
 import org.apache.camel.support.ExchangeHelper;
 import org.apache.camel.util.IOHelper;
@@ -124,6 +125,20 @@ public final class GenericFileConverter {
                     LOG.debug("Read file {} (no charset)", f);
                 }
                 InputStream inputStream = IOHelper.toInputStream(f, charset);
+
+                // Register a cleanup callback with the exchange
+                exchange.getUnitOfWork().addSynchronization(new Synchronization() {
+                    @Override
+                    public void onComplete(Exchange exchange) {
+                        IOHelper.close(inputStream);
+                    }
+
+                    @Override
+                    public void onFailure(Exchange exchange) {
+                        IOHelper.close(inputStream);
+                    }
+                });
+
                 inputStream.skip(file.getLastOffsetValue());
 
                 return inputStream;

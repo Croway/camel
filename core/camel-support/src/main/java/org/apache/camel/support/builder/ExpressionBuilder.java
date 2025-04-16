@@ -16,6 +16,7 @@
  */
 package org.apache.camel.support.builder;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -58,6 +59,7 @@ import org.apache.camel.support.LanguageHelper;
 import org.apache.camel.support.LanguageSupport;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.support.SingleInputTypedLanguageSupport;
+import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.InetAddressUtil;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.util.StringHelper;
@@ -1687,11 +1689,18 @@ public class ExpressionBuilder {
         return new ExpressionAdapter() {
             @Override
             public Object evaluate(Exchange exchange) {
-                Object result = type.evaluate(exchange, Object.class);
-                if (result != null) {
-                    return expression.evaluate(exchange, result.getClass());
-                } else {
-                    return expression;
+                Object result = null;
+                try {
+                    result = type.evaluate(exchange, Object.class);
+                    if (result != null) {
+                        return expression.evaluate(exchange, result.getClass());
+                    } else {
+                        return expression;
+                    }
+                } finally {
+                    if (result instanceof Closeable closeableResult) {
+                        IOHelper.close(closeableResult, null);
+                    }
                 }
             }
 
@@ -1893,28 +1902,35 @@ public class ExpressionBuilder {
             @Override
             public Object evaluate(Exchange exchange) {
                 // evaluate expression as iterator
-                Iterator<?> it = expression.evaluate(exchange, Iterator.class);
-                ObjectHelper.notNull(it,
-                        "expression: " + expression + " evaluated on " + exchange + " must return an java.util.Iterator");
+                Iterator<?> it = null;
+                try {
+                    it = expression.evaluate(exchange, Iterator.class);
+                    ObjectHelper.notNull(it,
+                            "expression: " + expression + " evaluated on " + exchange + " must return an java.util.Iterator");
 
-                StringBuilder sb = new StringBuilder(128);
-                while (it.hasNext()) {
-                    Object o = it.next();
-                    if (o != null) {
-                        String s = converter.tryConvertTo(String.class, exchange, o);
-                        if (s != null) {
-                            if (!sb.isEmpty()) {
-                                sb.append(separator);
+                    StringBuilder sb = new StringBuilder(128);
+                    while (it.hasNext()) {
+                        Object o = it.next();
+                        if (o != null) {
+                            String s = converter.tryConvertTo(String.class, exchange, o);
+                            if (s != null) {
+                                if (!sb.isEmpty()) {
+                                    sb.append(separator);
+                                }
+                                if (prefix != null) {
+                                    sb.append(prefix);
+                                }
+                                sb.append(s);
                             }
-                            if (prefix != null) {
-                                sb.append(prefix);
-                            }
-                            sb.append(s);
                         }
                     }
-                }
 
-                return sb.toString();
+                    return sb.toString();
+                } finally {
+                    if (it instanceof Closeable closeableIt) {
+                        IOHelper.close(closeableIt);
+                    }
+                }
             }
 
             @Override

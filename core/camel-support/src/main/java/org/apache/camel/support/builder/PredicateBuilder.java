@@ -430,7 +430,14 @@ public class PredicateBuilder {
         return new Predicate() {
             public boolean matches(Exchange exchange) {
                 Object value = expression.evaluate(exchange, Object.class);
-                return type.isInstance(value);
+                try {
+                    return type.isInstance(value);
+                } finally {
+                    // ensure stream is closed after use if the value is closeable
+                    if (value instanceof java.io.Closeable closeableValue) {
+                        org.apache.camel.util.IOHelper.close(closeableValue);
+                    }
+                }
             }
 
             @Override

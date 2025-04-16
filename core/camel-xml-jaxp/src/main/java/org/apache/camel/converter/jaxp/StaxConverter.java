@@ -19,6 +19,7 @@ package org.apache.camel.converter.jaxp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -208,11 +209,10 @@ public class StaxConverter {
     }
 
     @Converter(order = 13)
-    public XMLEventReader createXMLEventReader(File file, Exchange exchange) throws XMLStreamException, FileNotFoundException {
+    public XMLEventReader createXMLEventReader(File file, Exchange exchange) throws XMLStreamException, IOException {
         XMLInputFactory factory = getInputFactory();
-        try {
-            return factory.createXMLEventReader(IOHelper.buffered(new FileInputStream(file)),
-                    ExchangeHelper.getCharsetName(exchange));
+        try (InputStream is = IOHelper.buffered(new FileInputStream(file))) {
+            return factory.createXMLEventReader(is, ExchangeHelper.getCharsetName(exchange));
         } finally {
             returnXMLInputFactory(factory);
         }

@@ -330,7 +330,7 @@ public class MulticastProcessor extends AsyncProcessorSupport
     }
 
     protected boolean doProcess(Exchange exchange, AsyncCallback callback) {
-        Iterable<ProcessorExchangePair> pairs;
+        Iterable<ProcessorExchangePair> pairs = null;
         int size = 0;
         try {
             pairs = createProcessorExchangePairs(exchange);
@@ -345,6 +345,10 @@ public class MulticastProcessor extends AsyncProcessorSupport
             // and do the done work
             doDone(exchange, null, null, callback, true, false);
             return true;
+        } finally {
+            if (pairs != null && pairs instanceof Closeable) {
+                IOHelper.close((Closeable) pairs);
+            }
         }
 
         // we need to run in either transacted or reactive mode because the threading model is different

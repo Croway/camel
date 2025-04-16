@@ -45,65 +45,66 @@ public abstract class PropertyConfigurerSupport {
      * @return              the value converted to the expected type
      */
     public static <T> T property(CamelContext camelContext, Class<T> type, Object value) {
-        // if the type is not string based and the value is a bean reference, then we need to lookup
-        // the bean from the registry
-        if (value instanceof String && String.class != type) {
-            String text = value.toString();
+        Object convertedValue = value; // Use intermediate variable
 
+        // If the type is not string based and the value is a string, check for bean reference or time pattern
+        if (value instanceof String text && String.class != type) {
             if (EndpointHelper.isReferenceParameter(text)) {
                 Object obj;
-                // special for a list where we refer to beans which can be either a list or a single element
-                // so use Object.class as type
+                // Special handling for List type to resolve potentially multiple beans
                 if (type == List.class) {
                     obj = EndpointHelper.resolveReferenceListParameter(camelContext, text, Object.class);
                 } else {
                     obj = EndpointHelper.resolveReferenceParameter(camelContext, text, type);
                 }
                 if (obj == null) {
-                    // no bean found so throw an exception
+                    // No bean found, throw an exception
                     throw new NoSuchBeanException(text, type.getName());
                 }
-                value = obj;
+                convertedValue = obj; // Assign resolved bean
             } else if (type == long.class || type == Long.class || type == int.class || type == Integer.class) {
-                Object obj = null;
-                // string to long/int then it may be a duration where we can convert the value to milli seconds
-                // it may be a time pattern, such as 5s for 5 seconds = 5000
+                // Attempt to convert string to milliseconds if it's a time pattern (e.g., "5s")
                 try {
                     long num = TimeUtils.toMilliSeconds(text);
-                    if (type == int.class || type == Integer.class) {
-                        // need to cast to int
-                        obj = (int) num;
-                    } else {
-                        obj = num;
-                    }
+                    // Cast to int if necessary
+                    Object obj = (type == int.class || type == Integer.class) ? (int) num : num;
+                    convertedValue = obj; // Assign converted time value
                 } catch (IllegalArgumentException e) {
-                    // ignore
-                }
-                if (obj != null) {
-                    value = obj;
+                    // Ignore exception, let the standard type converter handle it later if it's not a time pattern
                 }
             }
         }
 
-        // special for boolean values with string values as we only want to accept "true" or "false"
-        if ((type == Boolean.class || type == boolean.class) && value instanceof String text) {
-            if (!MAGIC_VALUE.equals(value) && !text.equalsIgnoreCase("true") && !text.equalsIgnoreCase("false")) {
-                throw new IllegalArgumentException(
-                        "Cannot convert the String value: " + value + " to type: " + type
-                                                   + " as the value is not true or false");
+        // Special handling for boolean target type
+        if (type == Boolean.class || type == boolean.class) {
+            // Check if the value (potentially resolved bean or converted time) is a String
+            if (convertedValue instanceof String text) {
+                if (MAGIC_VALUE.equals(text)) {
+                    // If the input was MAGIC_VALUE, treat it as "true" for boolean conversion
+                    convertedValue = "true";
+                } else if (!text.equalsIgnoreCase("true") && !text.equalsIgnoreCase("false")) {
+                    // If it's a string but not "true", "false", or MAGIC_VALUE, throw error
+                    throw new IllegalArgumentException(
+                            "Cannot convert the String value: " + text + " to type: " + type
+                                                       + " as the value is not true or false");
+                }
+                // If text is "true" or "false" (case-insensitive), let the converter handle it
             }
+            // If convertedValue is not a String (e.g., already a Boolean or a resolved bean),
+            // let mandatoryConvertTo handle the conversion (it might fail if bean isn't convertible).
         }
 
-        if (value != null) {
+        // Perform the final mandatory type conversion
+        if (convertedValue != null) {
             try {
-                if (MAGIC_VALUE.equals(value) && boolean.class == type) {
-                    value = "true";
-                }
-                return camelContext.getTypeConverter().mandatoryConvertTo(type, value);
+                // The check for MAGIC_VALUE is removed from here as it's handled above
+                return camelContext.getTypeConverter().mandatoryConvertTo(type, convertedValue);
             } catch (NoTypeConversionAvailableException e) {
+                // Wrap and rethrow conversion exceptions
                 throw RuntimeCamelException.wrapRuntimeCamelException(e);
             }
         } else {
+            // Return null if the input value was null
             return null;
         }
     }

@@ -380,8 +380,9 @@ public class XmlConverter {
      */
     @Converter(order = 22)
     public SAXSource toSAXSource(Path file, Exchange exchange) throws IOException, SAXException, TransformerException {
-        InputStream is = IOHelper.buffered(Files.newInputStream(file));
-        return toSAXSource(is, exchange);
+        try (InputStream is = IOHelper.buffered(Files.newInputStream(file))) {
+            return toSAXSource(is, exchange);
+        }
     }
 
     /**
@@ -399,9 +400,10 @@ public class XmlConverter {
      */
     @Converter(order = 24)
     public StAXSource toStAXSource(Path file, Exchange exchange) throws IOException, XMLStreamException {
-        InputStream is = IOHelper.buffered(Files.newInputStream(file));
-        XMLStreamReader r = new StaxConverter().createXMLStreamReader(is, exchange);
-        return new StAXSource(r);
+        try (InputStream is = IOHelper.buffered(Files.newInputStream(file))) {
+            XMLStreamReader r = new StaxConverter().createXMLStreamReader(is, exchange);
+            return new StAXSource(r);
+        }
     }
 
     @Converter(order = 25)
