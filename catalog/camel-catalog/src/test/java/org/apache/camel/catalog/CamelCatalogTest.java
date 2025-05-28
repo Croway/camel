@@ -32,7 +32,6 @@ import org.apache.camel.tooling.model.ArtifactModel;
 import org.apache.camel.tooling.model.ComponentModel;
 import org.apache.camel.tooling.model.DataFormatModel;
 import org.apache.camel.tooling.model.Kind;
-import org.apache.camel.tooling.model.LanguageModel;
 import org.apache.camel.tooling.model.PojoBeanModel;
 import org.apache.camel.tooling.model.ReleaseModel;
 import org.junit.jupiter.api.Assertions;
@@ -1557,10 +1556,6 @@ public class CamelCatalogTest {
         ArtifactModel<?> am = catalog.modelFromMavenGAV("org.apache.camel", "camel-ftp", catalog.getCatalogVersion());
         Assertions.assertInstanceOf(ComponentModel.class, am);
         Assertions.assertEquals("Upload and download files to/from FTP servers.", am.getDescription());
-
-        am = catalog.modelFromMavenGAV("org.apache.camel", "camel-ognl", catalog.getCatalogVersion());
-        Assertions.assertInstanceOf(LanguageModel.class, am);
-        Assertions.assertEquals("Evaluates an OGNL expression (Apache Commons OGNL).", am.getDescription());
 
         am = catalog.modelFromMavenGAV("org.apache.camel", "camel-bindy", catalog.getCatalogVersion());
         Assertions.assertInstanceOf(DataFormatModel.class, am);
