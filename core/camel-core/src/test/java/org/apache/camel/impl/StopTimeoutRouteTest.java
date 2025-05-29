@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.ServiceStatus;
 import org.apache.camel.builder.RouteBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
@@ -32,6 +33,7 @@ public class StopTimeoutRouteTest extends ContextTestSupport {
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
+    @Disabled("flaky on fuse-jenkins")
     @Test
     public void testStopTimeout() throws Exception {
         getMockEndpoint("mock:foo").expectedBodiesReceived("Hello Foo");

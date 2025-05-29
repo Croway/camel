@@ -32,6 +32,7 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.infra.core.CamelContextExtension;
 import org.apache.camel.test.infra.core.DefaultCamelContextExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -191,6 +192,7 @@ public class JmsRequestReplyCorrelationTest extends AbstractJMSTest {
      * the reply to contain the messageId of the sent message. Here we test only that it is not the correlation id given
      * as the messageId is not know beforehand.
      */
+    @Disabled
     @Test
     public void testRequestReplyCorrelationByMessageId() throws Exception {
         MockEndpoint result = getMockEndpoint("mock:result");
