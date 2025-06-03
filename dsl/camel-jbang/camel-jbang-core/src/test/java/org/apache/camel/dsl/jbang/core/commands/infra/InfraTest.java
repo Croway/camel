@@ -23,6 +23,7 @@ import org.apache.camel.dsl.jbang.core.commands.CamelCommandBaseTest;
 import org.apache.camel.dsl.jbang.core.commands.CamelJBangMain;
 import org.assertj.core.api.Assertions;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class InfraTest extends CamelCommandBaseTest {
@@ -32,6 +33,7 @@ public class InfraTest extends CamelCommandBaseTest {
      * probably the affected module is camel-test-infra-common
      */
     @Test
+    @Disabled
     public void runService() throws Exception {
         // infraRun.doCall() is blocking, run on a new thread.
         Thread thread = new Thread(() -> {

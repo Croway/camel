@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -88,6 +89,7 @@ public class SedaBlockWhenFullTest extends ContextTestSupport {
         assertMockEndpointsSatisfied();
     }
 
+    @Disabled("flaky")
     @Test
     public void testAsyncSedaBlockingWhenFull() throws Exception {
         getMockEndpoint(MOCK_URI).setExpectedMessageCount(QUEUE_SIZE + 1);

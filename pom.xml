@@ -359,6 +359,7 @@
                                     <exclude>**/NOTICE.txt</exclude>
                                     <exclude>**/NOTICE</exclude>
                                     <exclude>**/README</exclude>
+                                    <exclude>**/Jenkinsfile.redhat</exclude>
                                     <exclude>**/TestImpl*</exclude>
                                     <exclude>**/archetype-resources/**</exclude>
                                     <exclude>**/ca-openssl.cnf</exclude>
@@ -417,6 +418,7 @@
                             <Jenkinsfile.deploy>SLASHSTAR_STYLE</Jenkinsfile.deploy>
                             <Jenkinsfile.dryrun>SLASHSTAR_STYLE</Jenkinsfile.dryrun>
                             <Jenkinsfile.jbangtest>SLASHSTAR_STYLE</Jenkinsfile.jbangtest>
+                            <Jenkinsfile.redhat>SLASHSTAR_STYLE</Jenkinsfile.redhat>
                             <atom>XML_STYLE</atom>
                             <bpmn>XML_STYLE</bpmn>
                             <camel-eclipse-pmd>XML_STYLE</camel-eclipse-pmd>

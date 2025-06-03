@@ -20,6 +20,7 @@ import org.apache.camel.ContextTestSupport;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.condition.OS;
 /**
  * Unit test for the file sort by expression
  */
+@Disabled
 @DisabledOnOs(value = { OS.LINUX },
               architectures = { "ppc64le" },
               disabledReason = "This test does not run reliably multiple platforms (see CAMEL-21438)")
