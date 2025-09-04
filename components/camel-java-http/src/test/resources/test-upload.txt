@@ -1,0 +1,11 @@
+This is a test file for multipart upload testing.
+It contains multiple lines of text.
+This file will be uploaded using the File-based APIs of JavaHttpMultipartUtils.
+
+The content includes:
+- Multiple lines
+- Special characters: áéíóú ñ @#$%&*()
+- Numbers: 12345 67890
+- Symbols: {}[]|\"'`~
+
+End of test file.

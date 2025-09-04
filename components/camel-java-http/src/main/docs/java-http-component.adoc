@@ -1,0 +1,504 @@
+= Java HTTP Component
+:doctitle: Java HTTP
+:shortname: java-http
+:artifactid: camel-java-http
+:description: Send requests to external HTTP servers using JDK HTTP Client.
+:since: 4.15
+:supportlevel: Preview
+:tabs-sync-option:
+:component-header: Only producer is supported
+//Manually maintained attributes
+:camel-spring-boot-name: java-http
+
+*Since Camel {since}*
+
+*{component-header}*
+
+The Java HTTP component provides HTTP-based endpoints
+for calling external HTTP resources (as a client to call external
+servers using HTTP). This component uses the JDK 11+ HTTP Client,
+eliminating the need for external HTTP client dependencies like Apache HTTP Client.
+
+Maven users will need to add the following dependency to their `pom.xml`
+for this component:
+
+[source,xml]
+------------------------------------------------------------
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-java-http</artifactId>
+    <version>x.x.x</version>
+    <!-- use the same version as your Camel core version -->
+</dependency>
+------------------------------------------------------------
+
+== URI format
+
+---------------------------------------------
+java-http:hostname[:port][/resourceUri][?options]
+java-https:hostname[:port][/resourceUri][?options]
+---------------------------------------------
+
+Will by default use port 80 for HTTP and 443 for HTTPS.
+
+
+// component-configure options: START
+
+// component-configure options: END
+
+// component options: START
+include::partial$component-configure-options.adoc[]
+include::partial$component-endpoint-options.adoc[]
+// component options: END
+
+// endpoint options: START
+
+// endpoint options: END
+
+// component headers: START
+include::partial$component-endpoint-headers.adoc[]
+// component headers: END
+
+== Usage
+
+=== Message Body
+
+Camel will store the HTTP response from the external server on the _OUT_ body.
+All headers from the _IN_ message will be copied to the _OUT_ message,
+so headers are preserved during routing. Additionally, Camel will add the
+HTTP response headers as well to the _OUT_ message headers.
+
+=== Response code
+
+Camel will handle, according to the HTTP response code:
+
+* Response code is in the range 100..299, Camel regards it as a success
+response.
+* Response code is in the range 300..399, Camel regards it as a
+redirection response and will throw a `HttpOperationFailedException`
+with the information.
+* Response code is 400+, Camel regards it as an external server failure
+and will throw a `HttpOperationFailedException` with the information.
+
+*throwExceptionOnFailure*
+
+The option, `throwExceptionOnFailure`, can be set to `false` to prevent
+the `HttpOperationFailedException` from being thrown for failed response
+codes. This allows you to get any response from the remote server.
+
+=== Exceptions
+
+`HttpOperationFailedException` exception contains the following information:
+
+* The HTTP status code
+* The HTTP status line (text of the status code)
+* Redirect location if server returned a redirect
+* Response body as a `java.lang.String`, if server provided a body as
+response
+
+=== Which HTTP method will be used
+
+The following algorithm is used to determine what HTTP method should be used: +
+ 1. Use method provided as endpoint configuration (`httpMethod`). +
+ 2. Use method provided in header (`Exchange.HTTP_METHOD`). +
+ 3. `GET` if query string is provided in header. +
+ 4. `GET` if endpoint is configured with a query string. +
+ 5. `POST` if there is data to send (body is not `null`). +
+ 6. `GET` otherwise.
+
+=== Configuring URI to call
+
+You can set the HTTP producer's URI directly from the endpoint URI. In
+the route below, Camel will call out to the external server, `oldhost`,
+using HTTP.
+
+[source,java]
+-------------------------------
+from("direct:start")
+    .to("java-http://oldhost");
+-------------------------------
+
+And the equivalent XML DSL:
+
+[source,xml]
+---------------------------------------------------------------------
+<route>
+  <from uri="direct:start"/>
+  <to uri="java-http://oldhost"/>
+</route>
+---------------------------------------------------------------------
+
+You can override the HTTP endpoint URI by adding a header with the key
+`Exchange.HTTP_URI` on the message.
+
+[source,java]
+-----------------------------------------------------------
+from("direct:start")
+  .setHeader(Exchange.HTTP_URI, constant("java-http://newhost"))
+  .to("java-http://oldhost");
+-----------------------------------------------------------
+
+In the sample above, Camel will call the java-http://newhost despite the
+endpoint is configured with java-http://oldhost. +
+If the java-http endpoint is working in bridge mode, it will ignore the
+message header of `Exchange.HTTP_URI`.
+
+=== Configuring URI Parameters
+
+The *java-http* producer supports URI parameters to be sent to the HTTP
+server. The URI parameters can either be set directly on the endpoint
+URI or as a header with the key `Exchange.HTTP_QUERY` on the message.
+
+[source,java]
+------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?order=123&detail=short");
+------------------------------------------------
+
+Or options provided in a header:
+
+[source,java]
+---------------------------------------------------------------------
+from("direct:start")
+  .setHeader(Exchange.HTTP_QUERY, constant("order=123&detail=short"))
+  .to("java-http://oldhost");
+---------------------------------------------------------------------
+
+=== How to set the http method (GET/PATCH/POST/PUT/DELETE/HEAD/OPTIONS/TRACE) to the HTTP producer
+
+The Java HTTP component provides a way to set the HTTP request method by
+setting the message header. Here is an example:
+
+[source,java]
+-----------------------------------------------------------------------------------------------
+from("direct:start")
+  .setHeader(Exchange.HTTP_METHOD, constant(org.apache.camel.component.http.HttpMethods.POST))
+  .to("java-http://www.google.com")
+  .to("mock:results");
+-----------------------------------------------------------------------------------------------
+
+The method can be written a bit shorter using the string constants:
+
+[source,java]
+-----------------------------------------------
+.setHeader("CamelHttpMethod", constant("POST"))
+-----------------------------------------------
+
+And the equivalent XML DSL:
+
+[source,xml]
+---------------------------------------------------------------------
+<route>
+  <from uri="direct:start"/>
+  <setHeader name="CamelHttpMethod">
+      <constant>POST</constant>
+  </setHeader>
+  <to uri="java-http://www.google.com"/>
+  <to uri="mock:results"/>
+</route>
+---------------------------------------------------------------------
+
+=== Using client timeout
+
+The Java HTTP component supports configuring both connection and request timeouts:
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?connectTimeout=5000&requestTimeout=10000");
+------------------------------------------------------------------------
+
+* `connectTimeout` - Connection timeout in milliseconds (default: 30000)
+* `requestTimeout` - Request timeout in milliseconds (default: 30000)
+
+=== Configuring a Proxy
+
+The Java HTTP component provides a way to configure a proxy.
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?proxyHost=www.myproxy.com&proxyPort=80");
+------------------------------------------------------------------------
+
+=== Configuring charset
+
+If you are using `POST` to send data you can configure the `charset`
+using the `Exchange` property:
+
+[source,java]
+----------------------------------------------------------
+exchange.setProperty(Exchange.CHARSET_NAME, "ISO-8859-1");
+----------------------------------------------------------
+
+==== Example with scheduled poll
+
+This sample polls the Google homepage every 10 seconds and write the
+page to the file `message.html`:
+
+[source,java]
+------------------------------------------------------------
+from("timer://foo?fixedRate=true&delay=0&period=10000")
+  .to("java-http://www.google.com")
+  .setHeader(FileComponent.HEADER_FILE_NAME, "message.html")
+  .to("file:target/google");
+------------------------------------------------------------
+
+==== URI Parameters from the endpoint URI
+
+In this sample, we have the complete URI endpoint that is just what you
+would have typed in a web browser. Multiple URI parameters can of course
+be set using the `&` character as separator, just as you would in the
+web browser. Camel does no tricks here.
+
+[source,java]
+-----------------------------------------------------------------
+// we query for Camel at the Google page
+template.sendBody("java-http://www.google.com/search?q=Camel", null);
+-----------------------------------------------------------------
+
+==== URI Parameters from the Message
+
+[source,java]
+------------------------------------------------------------------
+Map headers = new HashMap();
+headers.put(Exchange.HTTP_QUERY, "q=Camel&lr=lang_en");
+// we query for Camel and English language at Google
+template.sendBody("java-http://www.google.com/search", null, headers);
+------------------------------------------------------------------
+
+In the header value above notice that it should *not* be prefixed with
+`?` and you can separate parameters as usual with the `&` char.
+
+==== Getting the Response Code
+
+You can get the HTTP response code from the Java HTTP component by getting
+the value from the Out message header with
+`Exchange.HTTP_RESPONSE_CODE`.
+
+[source,java]
+------------------------------------------------------------------------------------
+Exchange exchange = template.send("java-http://www.google.com/search", new Processor() {
+  public void process(Exchange exchange) throws Exception {
+    exchange.getIn().setHeader(Exchange.HTTP_QUERY, constant("hl=en&q=activemq"));
+  }
+});
+Message out = exchange.getOut();
+int responseCode = out.getHeader(Exchange.HTTP_RESPONSE_CODE, Integer.class);
+------------------------------------------------------------------------------------
+
+=== Redirect Handling
+
+The Java HTTP component supports automatic redirect handling:
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?followRedirects=true");
+------------------------------------------------------------------------
+
+By default, redirects are followed automatically. Set `followRedirects=false` to disable this behavior.
+
+=== User Agent Configuration
+
+You can set a custom User-Agent header:
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?userAgent=MyApplication/1.0");
+------------------------------------------------------------------------
+
+=== Header Mapping Control
+
+You can control whether Camel headers are mapped to HTTP headers and vice versa:
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:start")
+  .to("java-http://oldhost?skipRequestHeaders=false&skipResponseHeaders=false");
+------------------------------------------------------------------------
+
+* `skipRequestHeaders=true` - Skip mapping Camel headers to HTTP request headers
+* `skipResponseHeaders=true` - Skip mapping HTTP response headers to Camel headers
+
+=== Multipart Form Data Support
+
+The Java HTTP component provides utility classes to easily create multipart/form-data content for file uploads and form submissions. The `JavaHttpMultipartUtils` class offers several convenient methods for building multipart bodies.
+
+==== Basic Form Fields
+
+Create multipart content with simple form fields:
+
+[source,java]
+------------------------------------------------------------------------
+import org.apache.camel.component.javahttp.JavaHttpMultipartUtils;
+import org.apache.camel.component.javahttp.JavaHttpMultipartUtils.MultipartData;
+
+Map<String, String> fields = new LinkedHashMap<>();
+fields.put("name", "John Doe");
+fields.put("email", "john@example.com");
+
+MultipartData multipartData = JavaHttpMultipartUtils.createMultipartBody(fields);
+
+from("direct:start")
+  .process(exchange -> {
+    exchange.getIn().setBody(multipartData.getBody());
+    exchange.getIn().setHeader("Content-Type", multipartData.getContentType());
+  })
+  .to("java-http://example.com/submit");
+------------------------------------------------------------------------
+
+==== File Upload
+
+Upload files using multipart form data:
+
+[source,java]
+------------------------------------------------------------------------
+// Upload with string content
+MultipartData fileData = JavaHttpMultipartUtils.createFileUploadBody(
+    "document.txt", "File content here", "text/plain");
+
+// Upload from File object
+File myFile = new File("/path/to/document.pdf");
+MultipartData fileData = JavaHttpMultipartUtils.createFileUploadBody(myFile);
+
+// Upload with additional form fields
+File file = new File("/path/to/file.txt");
+Map<String, String> additionalFields = new LinkedHashMap<>();
+additionalFields.put("description", "Important document");
+
+MultipartData fileData = JavaHttpMultipartUtils.createFileUploadBody(
+    file, "text/plain", "document", additionalFields);
+
+from("direct:upload")
+  .process(exchange -> {
+    exchange.getIn().setBody(fileData.getBody());
+    exchange.getIn().setHeader("Content-Type", fileData.getContentType());
+  })
+  .to("java-http://example.com/upload");
+------------------------------------------------------------------------
+
+==== Builder Pattern for Complex Forms
+
+Use the builder pattern for complex multipart forms with multiple fields and files:
+
+[source,java]
+------------------------------------------------------------------------
+File configFile = new File("/path/to/config.json");
+File documentFile = new File("/path/to/document.pdf");
+
+MultipartData complexData = new JavaHttpMultipartUtils.MultipartBuilder()
+    .addField("projectName", "My Project")
+    .addField("version", "1.0.0")
+    .addField("description", "Project description")
+    .addFile("config", configFile)  // Auto-detects content type
+    .addFile("document", documentFile, "application/pdf")
+    .build();
+
+from("direct:complexUpload")
+  .process(exchange -> {
+    exchange.getIn().setBody(complexData.getBody());
+    exchange.getIn().setHeader("Content-Type", complexData.getContentType());
+  })
+  .to("java-http://example.com/api/projects");
+------------------------------------------------------------------------
+
+==== File Upload Methods
+
+The utility class provides several methods for different use cases:
+
+* `createMultipartBody(Map<String, String> fields)` - Simple form fields
+* `createFileUploadBody(String fileName, String content, String contentType)` - Upload with string content
+* `createFileUploadBody(File file)` - Simple file upload with auto-detected content type
+* `createFileUploadBody(File file, String contentType)` - File upload with specific content type
+* `createFileUploadBody(File file, String fieldName, Map<String, String> additionalFields)` - File upload with additional fields
+* `generateBoundary()` - Generate a unique boundary string
+* `createContentTypeHeader(String boundary)` - Create proper Content-Type header
+
+All methods return a `MultipartData` object that contains:
+* `getBody()` - The multipart body content
+* `getBoundary()` - The boundary string used
+* `getContentType()` - The complete Content-Type header value
+
+==== Content Type Detection
+
+When using File objects, the utility automatically detects content types using `Files.probeContentType()`. If detection fails, it defaults to `"application/octet-stream"`.
+
+==== Example: Complete File Upload Route
+
+[source,java]
+------------------------------------------------------------------------
+from("direct:fileUpload")
+  .process(exchange -> {
+    // Get the file from a header or property
+    File fileToUpload = exchange.getIn().getHeader("fileToUpload", File.class);
+    
+    // Create multipart data with additional metadata
+    Map<String, String> metadata = new LinkedHashMap<>();
+    metadata.put("userId", "12345");
+    metadata.put("uploadDate", LocalDateTime.now().toString());
+    
+    MultipartData data = JavaHttpMultipartUtils.createFileUploadBody(
+        fileToUpload, "attachment", metadata);
+    
+    exchange.getIn().setBody(data.getBody());
+    exchange.getIn().setHeader("Content-Type", data.getContentType());
+  })
+  .to("java-http://api.example.com/files/upload?httpMethod=POST")
+  .log("File uploaded successfully: ${header.CamelHttpResponseCode}");
+------------------------------------------------------------------------
+
+=== Advanced Usage
+
+If you need more control over the HTTP producer, you should use the
+`JavaHttpComponent` where you can set various classes to give you custom
+behavior.
+
+==== Setting up SSL for Java HTTP Client
+
+The Java HTTP component supports SSL/TLS configuration through the standard JDK mechanisms.
+
+System properties that affect SSL/TLS behavior:
+
+* `javax.net.ssl.keyStore` - Path to the keystore file
+* `javax.net.ssl.keyStorePassword` - Password for the keystore
+* `javax.net.ssl.keyStoreType` - Type of keystore (JKS, PKCS12, etc.)
+* `javax.net.ssl.trustStore` - Path to the truststore file
+* `javax.net.ssl.trustStorePassword` - Password for the truststore
+* `javax.net.ssl.trustStoreType` - Type of truststore
+
+Example configuration:
+
+[source,java]
+---------------------------------------------------------------------------------------
+System.setProperty("javax.net.ssl.keyStore", "/path/to/keystore.jks");
+System.setProperty("javax.net.ssl.keyStorePassword", "keystorePassword");
+System.setProperty("javax.net.ssl.trustStore", "/path/to/truststore.jks");
+System.setProperty("javax.net.ssl.trustStorePassword", "truststorePassword");
+
+from("direct:start")
+  .to("java-https://secure-server.com/api");
+---------------------------------------------------------------------------------------
+
+=== Minimum Requirements
+
+* Java 11 or higher (for HTTP Client support)
+* Apache Camel 4.15.0 or higher
+
+=== Comparison with camel-http
+
+The Java HTTP component provides similar functionality to the camel-http component but with key differences:
+
+* **Dependencies**: Uses only JDK HTTP Client (no external dependencies)
+* **Performance**: Potentially better performance due to optimized JDK implementation
+* **Configuration**: Simpler configuration for basic use cases
+* **Features**: Some advanced features available in Apache HTTP Client may not be available
+
+Choose this component when:
+* You want to minimize external dependencies
+* You're using Java 11 or higher
+* You need basic to moderate HTTP client functionality
+* You want to leverage the JDK's native HTTP client
+
+include::spring-boot:partial$starter.adoc[]

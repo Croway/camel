@@ -64,6 +64,7 @@
         <module>camel-http-base</module>
         <module>camel-http-common</module>
         <module>camel-http</module>
+        <module>camel-java-http</module>
         <module>camel-jetty-common</module>
         <module>camel-jetty</module>
         <module>camel-undertow</module>

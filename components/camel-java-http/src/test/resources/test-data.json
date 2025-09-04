@@ -1,0 +1,17 @@
+{
+  "testData": {
+    "name": "Test JSON File",
+    "description": "This is a JSON test file for multipart upload testing",
+    "version": "1.0",
+    "metadata": {
+      "createdBy": "JavaHttpMultipartUtils test",
+      "timestamp": "2024-01-01T00:00:00Z",
+      "tags": ["test", "multipart", "upload", "json"]
+    },
+    "config": {
+      "enabled": true,
+      "maxRetries": 3,
+      "timeout": 30
+    }
+  }
+}
