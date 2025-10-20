@@ -43,16 +43,21 @@ import picocli.CommandLine;
                      showDefaultValues = true)
 public class DependencyUpdate extends DependencyList {
 
-    @CommandLine.Parameters(description = "Maven pom.xml or Java source files (JBang Style with //DEPS) to have dependencies updated",
-                            arity = "1")
-    public Path file;
+    @CommandLine.Parameters(description = "Maven pom.xml or Java source files (JBang Style with //DEPS) to have dependencies updated")
+    public List<Path> dependencyUpdateFiles;
 
     @CommandLine.Option(names = { "--clean" },
                         description = "Regenerate list of dependencies (do not keep existing dependencies). Not supported for pom.xml")
     protected boolean clean;
 
+    @CommandLine.Option(names = { "--scan-routes" },
+            description = "Comma separated list of java, YAML or XML routes to extract dependencies from")
+    protected String scanRoutes;
+
     private final List<String> deps = new ArrayList<>();
     private final List<MavenGav> gavs = new ArrayList<>();
+
+    private Path file;
 
     public DependencyUpdate(CamelJBangMain main) {
         super(main);
@@ -61,29 +66,41 @@ public class DependencyUpdate extends DependencyList {
     @Override
     public Integer doCall() throws Exception {
         // source file must exist
-        if (!Files.exists(file)) {
-            printer().printErr("Source file does not exist: " + file);
-            return -1;
+        for (Path file : dependencyUpdateFiles) {
+            if (!Files.exists(file)) {
+                printer().printErr("Source file does not exist: " + file);
+                return -1;
+            }
         }
 
-        boolean maven = "pom.xml".equals(file.getFileName().toString());
-
-        if (clean && !maven) {
-            // remove DEPS in source file first
-            updateJBangSource();
+        for (String route : scanRoutes.split(",")) {
+            super.files.add(route);
         }
 
-        if (maven && this.runtime == null) {
-            // Basic heuristic to determine if the project is a Quarkus or Spring Boot one.
-            String pomContent = new String(Files.readAllBytes(file));
-            if (pomContent.contains("quarkus")) {
-                runtime = RuntimeType.quarkus;
-            } else if (pomContent.contains("spring-boot")) {
-                runtime = RuntimeType.springBoot;
-            } else if (pomContent.contains("camel-main")) {
-                runtime = RuntimeType.main;
-            } else {
-                // In case no specific word found, we keep the runtime type unset even if the fallback is currently on Main Runtime type
+        files.remove("MyProcessor.java");
+        files.remove("MyOtherProcessor.java");
+
+        for (Path file : dependencyUpdateFiles) {
+            this.file = file;
+            boolean maven = "pom.xml".equals(file.getFileName().toString());
+
+            if (clean && !maven) {
+                // remove DEPS in source file first
+                updateJBangSource(file);
+            }
+
+            if (maven && this.runtime == null) {
+                // Basic heuristic to determine if the project is a Quarkus or Spring Boot one.
+                String pomContent = new String(Files.readAllBytes(file));
+                if (pomContent.contains("quarkus")) {
+                    runtime = RuntimeType.quarkus;
+                } else if (pomContent.contains("spring-boot")) {
+                    runtime = RuntimeType.springBoot;
+                } else if (pomContent.contains("camel-main")) {
+                    runtime = RuntimeType.main;
+                } else {
+                    // In case no specific word found, we keep the runtime type unset even if the fallback is currently on Main Runtime type
+                }
             }
         }
 
@@ -127,11 +144,11 @@ public class DependencyUpdate extends DependencyList {
         }
         boolean last = total - index <= 1;
         if (last) {
-            updateJBangSource();
+            updateJBangSource(file);
         }
     }
 
-    private void updateJBangSource() {
+    private void updateJBangSource(Path file) {
         try {
             List<String> lines = Files.readAllLines(file);
             List<String> answer = new ArrayList<>();

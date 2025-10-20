@@ -1,0 +1,5 @@
+- from:
+    uri: "timer:tick?period=1s"
+    steps:
+      - to:
+          log: "${body}"

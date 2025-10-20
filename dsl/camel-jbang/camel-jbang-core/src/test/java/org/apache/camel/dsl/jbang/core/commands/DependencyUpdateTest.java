@@ -27,9 +27,11 @@ import java.util.stream.Stream;
 import org.apache.camel.dsl.jbang.core.common.RuntimeType;
 import org.apache.camel.dsl.jbang.core.common.StringPrinter;
 import org.apache.camel.util.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -52,7 +54,26 @@ class DependencyUpdateTest extends CamelCommandBaseTest {
     @AfterEach
     void end() {
         // force removing, since deleteOnExit is not removing.
-        FileUtil.removeDir(workingDir);
+//        FileUtil.removeDir(workingDir);
+    }
+
+    @Test
+    void dependenciesUpdate() throws Exception {
+        StringPrinter dependenciesUpdatePrinter = new StringPrinter();
+
+        Path dependencyUpdatePath = workingDir.toPath().resolve("dependency-update");
+        FileUtils.copyDirectory(Paths.get("src", "test", "resources", "dependency-update").toFile(),
+                dependencyUpdatePath.toFile());
+
+        DependencyUpdate command = new DependencyUpdate(new CamelJBangMain().withPrinter(dependenciesUpdatePrinter));
+        CommandLine.populateCommand(command,
+                dependencyUpdatePath.resolve("MyProcessor.java").toString(),
+                dependencyUpdatePath.resolve("MyOtherProcessor.java").toString(),
+                "--clean=true"
+        );
+        int exit = command.doCall();
+        Assertions.assertEquals(0, exit, dependenciesUpdatePrinter.getLines().toString());
+        System.out.println(dependenciesUpdatePrinter.getLines().toString());
     }
 
     @ParameterizedTest
