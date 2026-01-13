@@ -17,6 +17,7 @@
 package org.apache.camel.component.langchain4j.tools;
 
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.spi.Configurer;
 import org.apache.camel.spi.Metadata;
@@ -30,6 +31,19 @@ public class LangChain4jToolsConfiguration implements Cloneable {
     @UriParam(label = "advanced")
     @Metadata(autowired = true)
     private ChatModel chatModel;
+
+    @UriParam(label = "advanced",
+              description = "Embedding Model for tool search. Required when using tools with exposed=false.")
+    @Metadata(autowired = true)
+    private EmbeddingModel embeddingModel;
+
+    @UriParam(label = "advanced", defaultValue = "5",
+              description = "Maximum number of tools to return from tool search")
+    private int toolSearchMaxResults = 5;
+
+    @UriParam(label = "advanced", defaultValue = "0.5",
+              description = "Minimum similarity score for tool search results (0.0 to 1.0)")
+    private double toolSearchMinScore = 0.5;
 
     public LangChain4jToolsConfiguration() {
     }
@@ -45,6 +59,46 @@ public class LangChain4jToolsConfiguration implements Cloneable {
 
     public void setChatModel(ChatModel chatModel) {
         this.chatModel = chatModel;
+    }
+
+    /**
+     * Embedding Model of type dev.langchain4j.model.embedding.EmbeddingModel. Required when using tools with
+     * exposed=false for semantic tool search.
+     *
+     * @return the embedding model
+     */
+    public EmbeddingModel getEmbeddingModel() {
+        return embeddingModel;
+    }
+
+    public void setEmbeddingModel(EmbeddingModel embeddingModel) {
+        this.embeddingModel = embeddingModel;
+    }
+
+    /**
+     * Maximum number of tools to return from tool search.
+     *
+     * @return the maximum results
+     */
+    public int getToolSearchMaxResults() {
+        return toolSearchMaxResults;
+    }
+
+    public void setToolSearchMaxResults(int toolSearchMaxResults) {
+        this.toolSearchMaxResults = toolSearchMaxResults;
+    }
+
+    /**
+     * Minimum similarity score for tool search results (0.0 to 1.0).
+     *
+     * @return the minimum score
+     */
+    public double getToolSearchMinScore() {
+        return toolSearchMinScore;
+    }
+
+    public void setToolSearchMinScore(double toolSearchMinScore) {
+        this.toolSearchMinScore = toolSearchMinScore;
     }
 
     public LangChain4jToolsConfiguration copy() {

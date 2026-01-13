@@ -30,22 +30,29 @@ public class LangChain4jToolsEndpointConfigurer extends PropertyConfigurerSuppor
         case "chatmodel":
         case "chatModel": target.getConfiguration().setChatModel(property(camelContext, dev.langchain4j.model.chat.ChatModel.class, value)); return true;
         case "description": target.setDescription(property(camelContext, java.lang.String.class, value)); return true;
+        case "embeddingmodel":
+        case "embeddingModel": target.getConfiguration().setEmbeddingModel(property(camelContext, dev.langchain4j.model.embedding.EmbeddingModel.class, value)); return true;
         case "exceptionhandler":
         case "exceptionHandler": target.setExceptionHandler(property(camelContext, org.apache.camel.spi.ExceptionHandler.class, value)); return true;
         case "exchangepattern":
         case "exchangePattern": target.setExchangePattern(property(camelContext, org.apache.camel.ExchangePattern.class, value)); return true;
+        case "exposed": target.setExposed(property(camelContext, boolean.class, value)); return true;
         case "lazystartproducer":
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "name": target.setName(property(camelContext, java.lang.String.class, value)); return true;
         case "parameters": target.setParameters(property(camelContext, java.util.Map.class, value)); return true;
         case "tags": target.setTags(property(camelContext, java.lang.String.class, value)); return true;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": target.getConfiguration().setToolSearchMaxResults(property(camelContext, int.class, value)); return true;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": target.getConfiguration().setToolSearchMinScore(property(camelContext, double.class, value)); return true;
         default: return false;
         }
     }
 
     @Override
     public String[] getAutowiredNames() {
-        return new String[]{"chatModel"};
+        return new String[]{"chatModel", "embeddingModel"};
     }
 
     @Override
@@ -58,15 +65,22 @@ public class LangChain4jToolsEndpointConfigurer extends PropertyConfigurerSuppor
         case "chatmodel":
         case "chatModel": return dev.langchain4j.model.chat.ChatModel.class;
         case "description": return java.lang.String.class;
+        case "embeddingmodel":
+        case "embeddingModel": return dev.langchain4j.model.embedding.EmbeddingModel.class;
         case "exceptionhandler":
         case "exceptionHandler": return org.apache.camel.spi.ExceptionHandler.class;
         case "exchangepattern":
         case "exchangePattern": return org.apache.camel.ExchangePattern.class;
+        case "exposed": return boolean.class;
         case "lazystartproducer":
         case "lazyStartProducer": return boolean.class;
         case "name": return java.lang.String.class;
         case "parameters": return java.util.Map.class;
         case "tags": return java.lang.String.class;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return int.class;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return double.class;
         default: return null;
         }
     }
@@ -82,15 +96,22 @@ public class LangChain4jToolsEndpointConfigurer extends PropertyConfigurerSuppor
         case "chatmodel":
         case "chatModel": return target.getConfiguration().getChatModel();
         case "description": return target.getDescription();
+        case "embeddingmodel":
+        case "embeddingModel": return target.getConfiguration().getEmbeddingModel();
         case "exceptionhandler":
         case "exceptionHandler": return target.getExceptionHandler();
         case "exchangepattern":
         case "exchangePattern": return target.getExchangePattern();
+        case "exposed": return target.isExposed();
         case "lazystartproducer":
         case "lazyStartProducer": return target.isLazyStartProducer();
         case "name": return target.getName();
         case "parameters": return target.getParameters();
         case "tags": return target.getTags();
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return target.getConfiguration().getToolSearchMaxResults();
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return target.getConfiguration().getToolSearchMinScore();
         default: return null;
         }
     }

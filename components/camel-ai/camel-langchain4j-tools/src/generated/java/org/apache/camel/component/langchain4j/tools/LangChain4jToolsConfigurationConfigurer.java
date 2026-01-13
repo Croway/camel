@@ -25,6 +25,12 @@ public class LangChain4jToolsConfigurationConfigurer extends org.apache.camel.su
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "chatmodel":
         case "chatModel": target.setChatModel(property(camelContext, dev.langchain4j.model.chat.ChatModel.class, value)); return true;
+        case "embeddingmodel":
+        case "embeddingModel": target.setEmbeddingModel(property(camelContext, dev.langchain4j.model.embedding.EmbeddingModel.class, value)); return true;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": target.setToolSearchMaxResults(property(camelContext, int.class, value)); return true;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": target.setToolSearchMinScore(property(camelContext, double.class, value)); return true;
         default: return false;
         }
     }
@@ -34,6 +40,12 @@ public class LangChain4jToolsConfigurationConfigurer extends org.apache.camel.su
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "chatmodel":
         case "chatModel": return dev.langchain4j.model.chat.ChatModel.class;
+        case "embeddingmodel":
+        case "embeddingModel": return dev.langchain4j.model.embedding.EmbeddingModel.class;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return int.class;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return double.class;
         default: return null;
         }
     }
@@ -44,6 +56,12 @@ public class LangChain4jToolsConfigurationConfigurer extends org.apache.camel.su
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "chatmodel":
         case "chatModel": return target.getChatModel();
+        case "embeddingmodel":
+        case "embeddingModel": return target.getEmbeddingModel();
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return target.getToolSearchMaxResults();
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return target.getToolSearchMinScore();
         default: return null;
         }
     }

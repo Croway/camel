@@ -37,15 +37,21 @@ public class LangChain4jToolsComponentConfigurer extends PropertyConfigurerSuppo
         case "chatmodel":
         case "chatModel": getOrCreateConfiguration(target).setChatModel(property(camelContext, dev.langchain4j.model.chat.ChatModel.class, value)); return true;
         case "configuration": target.setConfiguration(property(camelContext, org.apache.camel.component.langchain4j.tools.LangChain4jToolsConfiguration.class, value)); return true;
+        case "embeddingmodel":
+        case "embeddingModel": getOrCreateConfiguration(target).setEmbeddingModel(property(camelContext, dev.langchain4j.model.embedding.EmbeddingModel.class, value)); return true;
         case "lazystartproducer":
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": getOrCreateConfiguration(target).setToolSearchMaxResults(property(camelContext, int.class, value)); return true;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": getOrCreateConfiguration(target).setToolSearchMinScore(property(camelContext, double.class, value)); return true;
         default: return false;
         }
     }
 
     @Override
     public String[] getAutowiredNames() {
-        return new String[]{"chatModel"};
+        return new String[]{"chatModel", "embeddingModel"};
     }
 
     @Override
@@ -58,8 +64,14 @@ public class LangChain4jToolsComponentConfigurer extends PropertyConfigurerSuppo
         case "chatmodel":
         case "chatModel": return dev.langchain4j.model.chat.ChatModel.class;
         case "configuration": return org.apache.camel.component.langchain4j.tools.LangChain4jToolsConfiguration.class;
+        case "embeddingmodel":
+        case "embeddingModel": return dev.langchain4j.model.embedding.EmbeddingModel.class;
         case "lazystartproducer":
         case "lazyStartProducer": return boolean.class;
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return int.class;
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return double.class;
         default: return null;
         }
     }
@@ -75,8 +87,14 @@ public class LangChain4jToolsComponentConfigurer extends PropertyConfigurerSuppo
         case "chatmodel":
         case "chatModel": return getOrCreateConfiguration(target).getChatModel();
         case "configuration": return target.getConfiguration();
+        case "embeddingmodel":
+        case "embeddingModel": return getOrCreateConfiguration(target).getEmbeddingModel();
         case "lazystartproducer":
         case "lazyStartProducer": return target.isLazyStartProducer();
+        case "toolsearchmaxresults":
+        case "toolSearchMaxResults": return getOrCreateConfiguration(target).getToolSearchMaxResults();
+        case "toolsearchminscore":
+        case "toolSearchMinScore": return getOrCreateConfiguration(target).getToolSearchMinScore();
         default: return null;
         }
     }

@@ -35,7 +35,9 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.output.Response;
 import org.apache.camel.Exchange;
@@ -43,6 +45,7 @@ import org.apache.camel.InvalidPayloadException;
 import org.apache.camel.TypeConverter;
 import org.apache.camel.component.langchain4j.tools.spec.CamelToolExecutorCache;
 import org.apache.camel.component.langchain4j.tools.spec.CamelToolSpecification;
+import org.apache.camel.component.langchain4j.tools.spec.SearchableToolRegistry;
 import org.apache.camel.support.DefaultProducer;
 import org.apache.camel.util.ObjectHelper;
 import org.slf4j.Logger;
@@ -54,6 +57,7 @@ public class LangChain4jToolsProducer extends DefaultProducer {
     private final LangChain4jToolsEndpoint endpoint;
 
     private ChatModel chatModel;
+    private EmbeddingModel embeddingModel;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -79,7 +83,9 @@ public class LangChain4jToolsProducer extends DefaultProducer {
     protected void doStart() throws Exception {
         super.doStart();
         this.chatModel = this.endpoint.getConfiguration().getChatModel();
+        this.embeddingModel = this.endpoint.getConfiguration().getEmbeddingModel();
         ObjectHelper.notNull(chatModel, "chatModel");
+        // embeddingModel is optional, only required for tool search feature
     }
 
     private void populateResponse(String response, Exchange exchange) {
@@ -151,8 +157,32 @@ public class LangChain4jToolsProducer extends DefaultProducer {
             String toolName = toolExecutionRequest.name();
             LOG.info("Invoking tool {} ({}) of {}", i, toolName, toolExecutionRequests.size());
 
+            // Check if this is the tool-search-tool (special handling)
+            if (ToolSearchToolBuilder.TOOL_SEARCH_TOOL_NAME.equals(toolName)) {
+                String result = handleToolSearch(toolExecutionRequest, toolPair);
+                chatMessages.add(new ToolExecutionResultMessage(
+                        toolExecutionRequest.id(),
+                        toolExecutionRequest.name(),
+                        result));
+                i++;
+                continue;
+            }
+
+            // Find the tool in callable tools
             final CamelToolSpecification camelToolSpecification = toolPair.callableTools().stream()
-                    .filter(c -> c.getToolSpecification().name().equals(toolName)).findFirst().get();
+                    .filter(c -> c.getToolSpecification().name().equals(toolName))
+                    .findFirst()
+                    .orElse(null);
+
+            if (camelToolSpecification == null) {
+                LOG.warn("Tool {} not found in callable tools", toolName);
+                chatMessages.add(new ToolExecutionResultMessage(
+                        toolExecutionRequest.id(),
+                        toolExecutionRequest.name(),
+                        "Error: Tool '" + toolName + "' not found. Use search_available_tools to discover available tools."));
+                i++;
+                continue;
+            }
 
             try {
                 TypeConverter typeConverter = endpoint.getCamelContext().getTypeConverter();
@@ -200,6 +230,64 @@ public class LangChain4jToolsProducer extends DefaultProducer {
     }
 
     /**
+     * Handle the tool search meta-tool invocation. Performs semantic search for matching tools and adds them to the
+     * toolPair for subsequent invocation.
+     *
+     * @param  request  the tool execution request
+     * @param  toolPair the current tool pair to add discovered tools to
+     * @return          the result message to return to the LLM
+     */
+    private String handleToolSearch(ToolExecutionRequest request, ToolPair toolPair) {
+        try {
+            JsonNode jsonNode = objectMapper.readValue(request.arguments(), JsonNode.class);
+            String query = jsonNode.get("query").asText();
+
+            LOG.info("Executing tool search with query: {}", query);
+
+            String[] tags = TagsHelper.splitTags(endpoint.getTags());
+            int maxResults = endpoint.getConfiguration().getToolSearchMaxResults();
+            double minScore = endpoint.getConfiguration().getToolSearchMinScore();
+
+            List<CamelToolSpecification> matchedTools = SearchableToolRegistry.getInstance()
+                    .searchTools(query, embeddingModel, tags, maxResults, minScore);
+
+            if (matchedTools.isEmpty()) {
+                return "No matching tools found for query: '" + query + "'. Try a different search query.";
+            }
+
+            // Add matched tools to the toolPair for this conversation
+            for (CamelToolSpecification spec : matchedTools) {
+                if (!toolPair.callableTools().contains(spec)) {
+                    toolPair.callableTools().add(spec);
+                    toolPair.toolSpecifications().add(spec.getToolSpecification());
+                    LOG.debug("Added discovered tool: {}", spec.getToolSpecification().name());
+                }
+            }
+
+            // Format tool descriptions for LLM
+            StringBuilder sb = new StringBuilder();
+            sb.append("Found ").append(matchedTools.size()).append(" matching tool(s):\n\n");
+            for (CamelToolSpecification spec : matchedTools) {
+                ToolSpecification ts = spec.getToolSpecification();
+                sb.append("**").append(ts.name()).append("**: ").append(ts.description()).append("\n");
+                JsonObjectSchema params = ts.parameters();
+                if (params != null && params.properties() != null && !params.properties().isEmpty()) {
+                    sb.append("  Parameters: ");
+                    sb.append(String.join(", ", params.properties().keySet()));
+                    sb.append("\n");
+                }
+                sb.append("\n");
+            }
+            sb.append("You can now use these tools to complete your task.");
+
+            return sb.toString();
+        } catch (Exception e) {
+            LOG.error("Error executing tool search", e);
+            return "Error searching for tools: " + e.getMessage();
+        }
+    }
+
+    /**
      * This talks with the LLM to, passing the list of tools, and expects a response listing one ore more tools to be
      * called
      *
@@ -240,7 +328,7 @@ public class LangChain4jToolsProducer extends DefaultProducer {
      * This method traverses all tag sets to search for the tools that match the tags for the current endpoint.
      *
      * @param  toolCache the global cache of tools
-     * @return           It returns a record containing both the specification, and the {@link CamelToolSpecification}
+     * @return           It returns a ToolPair containing both the specification, and the {@link CamelToolSpecification}
      *                   that can be used to call the endpoints.
      */
     private ToolPair computeCandidates(CamelToolExecutorCache toolCache, Exchange exchange) {
@@ -264,6 +352,14 @@ public class LangChain4jToolsProducer extends DefaultProducer {
             }
         }
 
+        // Check if there are searchable tools for these tags and add the tool-search-tool
+        final SearchableToolRegistry searchableRegistry = SearchableToolRegistry.getInstance();
+        if (searchableRegistry.hasSearchableTools(tags) && embeddingModel != null) {
+            LOG.debug("Adding search_available_tools meta-tool for searchable tools");
+            toolSpecifications.add(ToolSearchToolBuilder.buildToolSearchTool());
+            // Note: tool-search-tool is handled specially in invokeTools, not added to callableTools
+        }
+
         if (toolSpecifications.isEmpty()) {
             exchange.getMessage().setHeader(LangChain4jTools.NO_TOOLS_CALLED_HEADER, Boolean.TRUE);
             return null;
@@ -273,12 +369,25 @@ public class LangChain4jToolsProducer extends DefaultProducer {
     }
 
     /**
-     * The pair of tools specifications that the Camel tools (i.e.: routes) that can be called for that set
-     *
-     * @param toolSpecifications
-     * @param callableTools
+     * The pair of tools specifications and the Camel tools (i.e.: routes) that can be called for that set. This class
+     * is mutable to allow dynamically discovered tools to be added during tool search.
      */
-    private record ToolPair(List<ToolSpecification> toolSpecifications, List<CamelToolSpecification> callableTools) {
+    private static class ToolPair {
+        private final List<ToolSpecification> toolSpecifications;
+        private final List<CamelToolSpecification> callableTools;
+
+        ToolPair(List<ToolSpecification> toolSpecifications, List<CamelToolSpecification> callableTools) {
+            this.toolSpecifications = new ArrayList<>(toolSpecifications);
+            this.callableTools = new ArrayList<>(callableTools);
+        }
+
+        List<ToolSpecification> toolSpecifications() {
+            return toolSpecifications;
+        }
+
+        List<CamelToolSpecification> callableTools() {
+            return callableTools;
+        }
     }
 
     private String extractAiResponse(Response<AiMessage> response) {

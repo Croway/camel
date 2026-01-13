@@ -26,6 +26,7 @@ import dev.langchain4j.model.chat.request.json.JsonNumberSchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.apache.camel.Category;
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
@@ -34,6 +35,7 @@ import org.apache.camel.component.langchain4j.tools.spec.CamelSimpleToolParamete
 import org.apache.camel.component.langchain4j.tools.spec.CamelToolExecutorCache;
 import org.apache.camel.component.langchain4j.tools.spec.CamelToolSpecification;
 import org.apache.camel.component.langchain4j.tools.spec.NamedJsonSchemaProperty;
+import org.apache.camel.component.langchain4j.tools.spec.SearchableToolRegistry;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
@@ -76,6 +78,12 @@ public class LangChain4jToolsEndpoint extends DefaultEndpoint {
     @Metadata(label = "consumer,advanced")
     @UriParam(description = "Tool's Camel Parameters, programmatically define Tool description and parameters")
     private CamelSimpleToolParameter camelToolParameter;
+
+    @Metadata(label = "consumer")
+    @UriParam(description = "Whether the tool is directly exposed to the LLM. If false, the tool is searchable " +
+                            "via the search_available_tools meta-tool but not directly visible to the LLM.",
+              defaultValue = "true")
+    private boolean exposed = true;
 
     public LangChain4jToolsEndpoint(String uri, LangChain4jToolsComponent component, String toolId, String tags,
                                     LangChain4jToolsConfiguration configuration) {
@@ -145,11 +153,27 @@ public class LangChain4jToolsEndpoint extends DefaultEndpoint {
 
         CamelToolSpecification camelToolSpecification
                 = new CamelToolSpecification(toolSpecification, langChain4jToolsConsumer);
-        final CamelToolExecutorCache executorCache = CamelToolExecutorCache.getInstance();
 
         String[] splitTags = TagsHelper.splitTags(tags);
-        for (String tag : splitTags) {
-            executorCache.put(tag, camelToolSpecification);
+
+        if (exposed) {
+            // Existing behavior: register in the executor cache for direct exposure to LLM
+            final CamelToolExecutorCache executorCache = CamelToolExecutorCache.getInstance();
+            for (String tag : splitTags) {
+                executorCache.put(tag, camelToolSpecification);
+            }
+        } else {
+            // Register in searchable registry for semantic search
+            EmbeddingModel embeddingModel = configuration.getEmbeddingModel();
+            if (embeddingModel == null) {
+                throw new IllegalStateException(
+                        "EmbeddingModel must be configured in LangChain4jToolsConfiguration to use exposed=false tools. " +
+                                                "Set the embeddingModel property on the component configuration.");
+            }
+            final SearchableToolRegistry searchableRegistry = SearchableToolRegistry.getInstance();
+            for (String tag : splitTags) {
+                searchableRegistry.registerTool(tag, camelToolSpecification, embeddingModel);
+            }
         }
 
         return camelToolSpecification.getConsumer();
@@ -220,6 +244,20 @@ public class LangChain4jToolsEndpoint extends DefaultEndpoint {
         this.camelToolParameter = camelToolParameter;
     }
 
+    /**
+     * Whether the tool is directly exposed to the LLM. If false, the tool is searchable via the search_available_tools
+     * meta-tool but not directly visible to the LLM.
+     *
+     * @return true if exposed, false if searchable only
+     */
+    public boolean isExposed() {
+        return exposed;
+    }
+
+    public void setExposed(boolean exposed) {
+        this.exposed = exposed;
+    }
+
     public void setTags(String tags) {
         this.tags = tags;
     }
@@ -238,6 +276,7 @@ public class LangChain4jToolsEndpoint extends DefaultEndpoint {
         super.doStop();
 
         CamelToolExecutorCache.getInstance().getTools().clear();
+        SearchableToolRegistry.getInstance().clear();
     }
 
     /**

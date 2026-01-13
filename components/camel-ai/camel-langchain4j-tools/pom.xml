@@ -116,6 +116,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- For tool search integration tests using all-MiniLM-L6-v2 ONNX model -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+            <version>${langchain4j-beta-version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
