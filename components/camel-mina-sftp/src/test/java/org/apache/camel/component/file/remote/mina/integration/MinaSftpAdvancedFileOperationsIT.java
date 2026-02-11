@@ -25,6 +25,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.file.GenericFileOperationFailedException;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -57,6 +58,18 @@ public class MinaSftpAdvancedFileOperationsIT extends MinaSftpServerTestSupport 
         ftpRootDir = service.getFtpRootDir().toString();
         // Generate unique ID for each test run to avoid file conflicts between retries
         testId = String.valueOf(System.currentTimeMillis() % 100000);
+    }
+
+    @AfterEach
+    public void doPostTearDown() {
+        // Clean up broken symlink to avoid interfering with the docs build
+        // (glob-stream fails on broken symlinks during recursive directory traversal)
+        Path brokenLink = ftpFile("broken-link.txt");
+        try {
+            Files.deleteIfExists(brokenLink);
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     private String baseUri() {
