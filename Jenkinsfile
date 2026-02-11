@@ -24,6 +24,8 @@ Below parameters are required for camel/core/camel-core module's test cases to p
 */
 def MAVEN_TEST_PARAMS_ALT_ARCHS = "-Djdk.xml.xpathExprGrpLimit=100 -Djdk.xml.xpathExprOpLimit=2000"
 
+def MAVEN_PRINT_TIMESTAMP = "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss"
+
 pipeline {
 
     environment {
@@ -140,16 +142,16 @@ pipeline {
                                     if ("${PLATFORM}" == "ubuntu-avx") {
                                         if ("${JDK_NAME}" == "jdk_21_latest") {
                                             // Enable virtual threads
-                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS_UBUNTU -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -Dcamel.threads.virtual.enabled=${params.VIRTUAL_THREAD}"
+                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS_UBUNTU $MAVEN_PRINT_TIMESTAMP -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -Dcamel.threads.virtual.enabled=${params.VIRTUAL_THREAD}"
                                         } else if ("${JDK_NAME}" == "jdk_17_latest") {
                                             // Enable coverage required later by Sonar check
-                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -Pcoverage"
+                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS $MAVEN_PRINT_TIMESTAMP -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -Pcoverage"
                                         } else {
-                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install"
+                                            sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS $MAVEN_PRINT_TIMESTAMP -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install"
                                         }
                                     } else {
                                         // Skip the test case execution of modules which are either not supported on ppc64le or vendor images are not available for ppc64le.
-                                        sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS $MAVEN_TEST_PARAMS_ALT_ARCHS -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -pl '!docs'"
+                                        sh "./mvnw $MAVEN_PARAMS $MAVEN_TEST_PARAMS $MAVEN_TEST_PARAMS_ALT_ARCHS $MAVEN_PRINT_TIMESTAMP -Darchetype.test.skip -Dmaven.test.failure.ignore=true -Dcheckstyle.skip=true install -pl '!docs'"
                                         echo "Code quality review disabled for ${PLATFORM} with JDK ${JDK_NAME}"
                                     }
                                 }
