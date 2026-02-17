@@ -297,6 +297,10 @@ public class MigrationData {
 
     /**
      * Search migration guides for sections matching the query using fuzzy matching.
+     * <p>
+     * Scoring: +10 if the full query appears verbatim in the section content. Per query token: +3 exact token match, +2
+     * fuzzy match (Levenshtein distance &le; max(1, minTokenLen/4)), +1 substring fallback. Results are sorted by
+     * descending score.
      */
     public List<GuideSection> searchGuides(String query, int maxResults) {
         List<String> queryTokens = tokenize(query);
