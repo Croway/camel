@@ -57,6 +57,38 @@ Should be changed to have semicolons as shown below:
 ----
 
 
+=== camel-test-infra
+
+The test infrastructure modules no longer produce `test-jar` artifacts. All classes (service interfaces,
+container implementations, JUnit extensions, and service factories) are now packaged in the regular JAR artifact.
+
+If your project depends on `camel-test-infra-*` modules with `<type>test-jar</type>`, remove the `<type>` element:
+
+Before:
+[source,xml]
+----
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-test-infra-kafka</artifactId>
+    <version>${camel.version}</version>
+    <type>test-jar</type>
+    <scope>test</scope>
+</dependency>
+----
+
+After:
+[source,xml]
+----
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-test-infra-kafka</artifactId>
+    <version>${camel.version}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+This applies to all `camel-test-infra-*` artifacts, including `camel-test-infra-common`.
+
 === camel-yaml-io / camel-xml-io
 
 In the YAML DSL we have renamed `routePolicy` to `routePolicyRef` on the `route` node,
