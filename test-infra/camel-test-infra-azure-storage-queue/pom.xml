@@ -29,10 +29,6 @@
     <name>Camel :: Test Infra :: Azure Storage Queue</name>
     <artifactId>camel-test-infra-azure-storage-queue</artifactId>
 
-    <properties>
-        <assembly.skipAssembly>false</assembly.skipAssembly>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -50,18 +46,6 @@
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-test-infra-azure-common</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-test-infra-azure-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>${testcontainers-version}</version>
         </dependency>
 
         <!-- azure sdk -->

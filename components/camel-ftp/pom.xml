@@ -96,7 +96,6 @@
             <scope>test</scope>
         </dependency>
 
-
         <!-- for testing sftp through http proxy -->
         <dependency>
             <groupId>io.github.littleproxy</groupId>
@@ -155,15 +154,7 @@
             <scope>test</scope>
         </dependency>
 
-
         <!-- test infra -->
-       <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-test-infra-ftp</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-test-infra-ftp</artifactId>
