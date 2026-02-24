@@ -159,6 +159,44 @@ public interface Langchain4jAgentComponentBuilderFactory {
             doSetProperty("autowiredEnabled", autowiredEnabled);
             return this;
         }
+    
+        /**
+         * Pre-built MCP (Model Context Protocol) client instances for external
+         * tool integration. Reference beans from the registry, e.g.,
+         * #myMcpClient1,#myMcpClient2.
+         * 
+         * The option is a:
+         * &lt;code&gt;java.util.List&amp;lt;dev.langchain4j.mcp.client.McpClient&amp;gt;&lt;/code&gt; type.
+         * 
+         * Group: advanced
+         * 
+         * @param mcpClients the value to set
+         * @return the dsl builder
+         */
+        default Langchain4jAgentComponentBuilder mcpClients(java.util.List<dev.langchain4j.mcp.client.McpClient> mcpClients) {
+            doSetProperty("mcpClients", mcpClients);
+            return this;
+        }
+    
+        /**
+         * MCP server definitions in the form of mcpServer..=. Supported
+         * properties: transportType (stdio or http, default: stdio), command
+         * (comma-separated, for stdio), url (for http), environment.= (for
+         * stdio), timeout (in seconds, default: 60), logRequests, logResponses.
+         * This is a multi-value option with prefix: mcpServer.
+         * 
+         * The option is a: &lt;code&gt;java.util.Map&amp;lt;java.lang.String,
+         * java.lang.Object&amp;gt;&lt;/code&gt; type.
+         * 
+         * Group: advanced
+         * 
+         * @param mcpServer the value to set
+         * @return the dsl builder
+         */
+        default Langchain4jAgentComponentBuilder mcpServer(java.util.Map<java.lang.String, java.lang.Object> mcpServer) {
+            doSetProperty("mcpServer", mcpServer);
+            return this;
+        }
     }
 
     class Langchain4jAgentComponentBuilderImpl
@@ -186,6 +224,8 @@ public interface Langchain4jAgentComponentBuilderFactory {
             case "lazyStartProducer": ((LangChain4jAgentComponent) component).setLazyStartProducer((boolean) value); return true;
             case "tags": getOrCreateConfiguration((LangChain4jAgentComponent) component).setTags((java.lang.String) value); return true;
             case "autowiredEnabled": ((LangChain4jAgentComponent) component).setAutowiredEnabled((boolean) value); return true;
+            case "mcpClients": getOrCreateConfiguration((LangChain4jAgentComponent) component).setMcpClients((java.util.List) value); return true;
+            case "mcpServer": getOrCreateConfiguration((LangChain4jAgentComponent) component).setMcpServer((java.util.Map) value); return true;
             default: return false;
             }
         }
