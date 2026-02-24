@@ -31,47 +31,23 @@ Stream caching is configured using `org.apache.camel.spi.StreamCachingStrategy`.
 
 The strategy has the following options:
 
-[width="100%",cols="20%,20%,60%",options="header"]
-|=======================================================================
+[width="100%",cols="1m,1,4",options="header"]
+|===
 | Option | Default | Description
-
-| enabled | true
-| Whether stream caching is enabled
-
 | allowClasses | | To filter stream caching of a given set of allowed/denied classes. By default, all classes that are `java.io.InputStream` is allowed. Multiple class names can be separated by comma.
-
+| anySpoolRules | false | Whether any or all ``SpoolRule``s must return `true` to determine if the stream should be spooled or not. This can be used as applying AND/OR binary logic to all the rules. By default it's AND based.
+| bufferSize | 4096 | Sets the buffer size to use when allocating in-memory buffers used for in-memory stream caches.
 | denyClasses | | To filter stream caching of a given set of allowed/denied classes. By default, all classes that are `java.io.InputStream` is allowed. Multiple class names can be separated by comma.
-
-| spoolEnabled | false
-| Whether spool to disk is enabled
-
-| spoolDirectory | ${java.io.tmpdir}/camel/camel-tmp-\#uuid#
-| Base directory where temporary files for spooled streams should be stored. This option supports naming patterns as documented below.
-
-| spoolCipher | null
-| If set, the temporary files are encrypted using the specified cipher transformation (i.e., a valid stream or 8-bit cipher name such as "RC4", "AES/CTR/NoPadding". An empty name "" is treated as null).
-
-| spoolThreshold | 128 KB
-| Size in bytes when the stream should be spooled to disk instead of keeping in memory. Use a value of 0 or negative to disable it all together so streams is always kept in memory regardless of their size.
-
-| spoolUsedHeapMemoryThreshold | 0
-| A percentage (1 to 99) of current used heap memory to use as threshold for spooling streams to disk. The upper bounds is based on heap committed (guaranteed memory the JVM can claim). This can be used to spool to disk when running low on memory.
-
-| spoolUsedHeapMemoryLimit | Max
-| If `spoolUsedHeapMemoryThreshold` is in use, then whether the used heap memory upper limit is either Max or Committed.
-
-| anySpoolRules | false
-| Whether any or all ``SpoolRule``s must return `true` to determine if the stream should be spooled or not. This can be used as applying AND/OR binary logic to all the rules. By default it's AND based.
-
-| bufferSize | 4096
-| Sets the buffer size to use when allocating in-memory buffers used for in-memory stream caches.
-
-| removeSpoolDirectoryWhenStopping | true
-| Whether to remove the spool directory when stopping xref:camelcontext.adoc[CamelContext].
-
-| statisticsEnabled | false
-| Whether utilization statistics is enabled. By enabling this you can see these statics for example with JMX.
-|=======================================================================
+| enabled | true | Whether stream caching is enabled
+| removeSpoolDirectoryWhenStopping | true | Whether to remove the spool directory when stopping xref:camelcontext.adoc[CamelContext].
+| spoolCipher | null | If set, the temporary files are encrypted using the specified cipher transformation (i.e., a valid stream or 8-bit cipher name such as "RC4", "AES/CTR/NoPadding". An empty name "" is treated as null).
+| spoolDirectory | ${java.io.tmpdir}/camel/camel-tmp-\#uuid# | Base directory where temporary files for spooled streams should be stored. This option supports naming patterns as documented below.
+| spoolEnabled | false | Whether spool to disk is enabled
+| spoolThreshold | 128 KB | Size in bytes when the stream should be spooled to disk instead of keeping in memory. Use a value of 0 or negative to disable it all together so streams is always kept in memory regardless of their size.
+| spoolUsedHeapMemoryLimit | Max | If `spoolUsedHeapMemoryThreshold` is in use, then whether the used heap memory upper limit is either Max or Committed.
+| spoolUsedHeapMemoryThreshold | 0 | A percentage (1 to 99) of current used heap memory to use as threshold for spooling streams to disk. The upper bounds is based on heap committed (guaranteed memory the JVM can claim). This can be used to spool to disk when running low on memory.
+| statisticsEnabled | false | Whether utilization statistics is enabled. By enabling this you can see these statics for example with JMX.
+|===
 
 === SpoolDirectory naming pattern
 
@@ -133,9 +109,25 @@ from("file:inbox")
   .to("bean:foo");
 ----
 
-== Configuring StreamCachingStrategy in XML
+== Configuring Stream Caching using Application Properties
 
-In XML you can enable stream caching on the `<camelContext>` and then do the configuration in the `streamCaching` element:
+When using Spring Boot, Quarkus or Camel Standalone It's recommended to configure stream caching in the `application.properties` configuration file:
+
+.Application Properties
+[source,properties]
+----
+camel.main.streamCachingSpoolEnabled = true
+camel.main.streamCachingSpoolDirectory = /tmp/cachedir
+camel.main.streamCachingSpoolThreshold = 65536
+camel.main.streamCachingBufferSize = 16384;
+----
+
+TIP: You can run Camel JBang: `camel doc main --filter=stream` from CLI to see all the options.
+
+
+== Configuring StreamCachingStrategy in Spring XML
+
+In xref:spring-xml-extensions.adoc[Spring XML] you can enable stream caching on the `<camelContext>` and then do the configuration in the `streamCaching` element:
 
 [source,xml]
 ----
