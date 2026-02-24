@@ -11736,7 +11736,7 @@ public final class ModelDeserializers extends YamlDeserializerSupport {
             nodes = "pgp",
             types = org.apache.camel.model.dataformat.PGPDataFormat.class,
             order = org.apache.camel.dsl.yaml.common.YamlDeserializerResolver.ORDER_LOWEST - 1,
-            displayName = "PGP",
+            displayName = "PGP (Pretty Good Privacy Cryptographic)",
             description = "Encrypt and decrypt messages using Java Cryptographic Extension (JCE) and PGP.",
             deprecated = false,
             properties = {

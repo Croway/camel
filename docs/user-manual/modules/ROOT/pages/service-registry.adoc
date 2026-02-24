@@ -4,6 +4,9 @@ Service registration is a key part of service discovery which Camel leverages th
 the _Service Call EIP_ and support to ease the process to expose routes in a
 cloud environment and consume them with minimal configuration.
 
+IMPORTANT: The Service Call EIP is deprecated.
+
+
 == Service Registry Set-Up
 
 A `ServiceRegistry` is just like any other camel service so set it up you only need
@@ -23,7 +26,6 @@ Out of the box camel provides the following implementations:
 |====
 |Type         |Module             | Class
 |consul       |camel-consul       | org.apache.camel.component.consul.cloud.ConsulServiceRegistry
-|spring-cloud |camel-spring-cloud | org.apache.camel.component.spring.cloud.CamelSpringCloudServiceRegistry
 |zookeeper    |camel-zookeeper    | org.apache.camel.component.zookeeper.cloud.ZooKeeperServiceRegistry
 |====
 
@@ -38,7 +40,7 @@ to a given `ServiceRegistry` according to route's life-cycle:
 
 [source,java]
 ----
-RoutePolicy policy = new ServiceRegistrationRoutePolicy()
+RoutePolicy policy = new ServiceRegistrationRoutePolicy();
 
 // bind the policy to one or more routes
 from("undertow:http://0.0.0.0:8080")
@@ -84,6 +86,7 @@ Any property prefixed with _service._ is automatically added to the service's me
 
 TIP: Some component such has camel-undertow and those based on camel-http-common implement _DiscoverableService_ and they can automatically provide the metadata needed for service registration.
 
+
 === Service Component
 
 The xref:components::service-component.adoc[Service] component is similar to a `ServiceRegistrationRoutePolicyFactory`
@@ -113,3 +116,8 @@ from("service:my-service:undertow:http://0.0.0.0:8080?service.id=my-service-id")
 
 Any option prefixed with _service._ is automatically added to the service's metadata.
 
+
+== See More
+
+- xref:components::consul-component.adoc[Consul] component
+- xref:components::zookeeper-component.adoc[Zookeeper] component

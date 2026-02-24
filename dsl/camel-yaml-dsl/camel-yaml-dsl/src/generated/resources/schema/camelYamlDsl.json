@@ -12458,7 +12458,7 @@
         }
       },
       "org.apache.camel.model.dataformat.PGPDataFormat" : {
-        "title" : "PGP",
+        "title" : "PGP (Pretty Good Privacy Cryptographic)",
         "description" : "Encrypt and decrypt messages using Java Cryptographic Extension (JCE) and PGP.",
         "type" : "object",
         "additionalProperties" : false,
