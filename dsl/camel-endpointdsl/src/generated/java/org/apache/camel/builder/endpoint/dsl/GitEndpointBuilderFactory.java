@@ -811,8 +811,9 @@ public interface GitEndpointBuilderFactory {
             return this;
         }
         /**
-         * Clone depth for shallow clones. A value of 1 fetches only the latest
-         * commit. When set to 0 or not specified, a full clone is performed.
+         * Clone depth for shallow clones. Must be a positive integer. A value
+         * of 1 fetches only the latest commit. When set to 0 or not specified,
+         * a full clone is performed.
          * 
          * The option is a: <code>int</code> type.
          * 
@@ -826,8 +827,9 @@ public interface GitEndpointBuilderFactory {
             return this;
         }
         /**
-         * Clone depth for shallow clones. A value of 1 fetches only the latest
-         * commit. When set to 0 or not specified, a full clone is performed.
+         * Clone depth for shallow clones. Must be a positive integer. A value
+         * of 1 fetches only the latest commit. When set to 0 or not specified,
+         * a full clone is performed.
          * 
          * The option will be converted to a <code>int</code> type.
          * 

@@ -74,7 +74,8 @@ public class GitEndpoint extends ScheduledPollEndpoint {
     private boolean allowEmpty = true;
 
     @UriParam(label = "producer",
-              description = "Clone depth for shallow clones. A value of 1 fetches only the latest commit. "
+              description = "Clone depth for shallow clones. Must be a positive integer. "
+                            + "A value of 1 fetches only the latest commit. "
                             + "When set to 0 or not specified, a full clone is performed.")
     private int depth;
 
@@ -96,6 +97,10 @@ public class GitEndpoint extends ScheduledPollEndpoint {
 
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
+        if (type == null) {
+            throw new IllegalArgumentException("type must be specified for git consumer");
+        }
+
         return switch (type) {
             case COMMIT -> new GitCommitConsumer(this, processor);
             case TAG -> new GitTagConsumer(this, processor);
