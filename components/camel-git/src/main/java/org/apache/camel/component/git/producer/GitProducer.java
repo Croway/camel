@@ -219,6 +219,9 @@ public class GitProducer extends DefaultProducer {
                             new UsernamePasswordCredentialsProvider(
                                     endpoint.getUsername(), endpoint.getPassword()));
                 }
+                if (endpoint.getDepth() < 0) {
+                    throw new IllegalArgumentException("depth must be a positive integer for shallow clone");
+                }
                 if (endpoint.getDepth() > 0) {
                     cloneCommand.setDepth(endpoint.getDepth());
                 }
