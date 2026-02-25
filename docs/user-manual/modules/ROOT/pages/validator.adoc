@@ -4,6 +4,8 @@ Validator performs declarative validation of the message according to the declar
 _Input Type_ and/or _Output Type_ on a route definition which declares the expected
 message type.
 
+NOTE: Currently, validators is only supported in Java DSL and the classic Spring XML.
+
 
 == Data type format
 
