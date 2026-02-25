@@ -17,6 +17,7 @@
 package org.apache.camel.main.download;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.CamelContextAware;
 import org.apache.camel.component.properties.BooleanPropertiesFunction;
 import org.apache.camel.component.properties.DefaultPropertiesFunctionResolver;
 import org.apache.camel.spi.PropertiesFunction;
@@ -39,7 +40,36 @@ public class DependencyDownloaderPropertiesFunctionResolver extends DefaultPrope
 
     @Override
     public PropertiesFunction resolvePropertiesFunction(String name) {
+        PropertiesFunction answer = null;
+
+        if (export) {
+            downloadPropertiesFunctionExport(name);
+        } else if (transform) {
+            if ("boolean".equals(name)) {
+                // ensure boolean function can fallback and return a value as we just want to transform
+                answer = new ExportBooleanFunction();
+                CamelContextAware.trySetCamelContext(answer, getCamelContext());
+                ServiceHelper.startService(answer);
+                addPropertiesFunction(answer);
+            } else {
+                // use a dummy function as we are transforming route
+                answer = new TransformDummyFunction(name);
+                addPropertiesFunction(answer);
+            }
+        }
+
+        if (answer == null) {
+            answer = super.resolvePropertiesFunction(name);
+        }
+        if (answer != null && export) {
+            answer = new ExportPropertiesFunction(answer);
+        }
+        return answer;
+    }
+
+    private void downloadPropertiesFunctionExport(String name) {
         DependencyDownloader downloader = getCamelContext().hasService(DependencyDownloader.class);
+
         if ("base64".equals(name)) {
             if (downloader != null && !downloader.alreadyOnClasspath("org.apache.camel", "camel-base64",
                     getCamelContext().getVersion())) {
@@ -82,19 +112,6 @@ public class DependencyDownloaderPropertiesFunctionResolver extends DefaultPrope
                         getCamelContext().getVersion());
             }
         }
-        if ("boolean".equals(name) && transform) {
-            // ensure boolean function can fallback and return a value as we just want to transform
-            var bf = new ExportBooleanFunction();
-            bf.setCamelContext(getCamelContext());
-            ServiceHelper.startService(bf);
-            addPropertiesFunction(bf);
-
-        }
-        PropertiesFunction answer = super.resolvePropertiesFunction(name);
-        if (answer != null && export) {
-            answer = new ExportPropertiesFunction(answer);
-        }
-        return answer;
     }
 
     private static class ExportBooleanFunction extends BooleanPropertiesFunction {
@@ -106,6 +123,25 @@ public class DependencyDownloaderPropertiesFunctionResolver extends DefaultPrope
             } catch (Exception e) {
                 return "true";
             }
+        }
+    }
+
+    private static class TransformDummyFunction implements PropertiesFunction {
+
+        private final String name;
+
+        public TransformDummyFunction(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String apply(String remainder) {
+            return remainder == null || remainder.isBlank() ? "dummy" : remainder;
         }
     }
 
