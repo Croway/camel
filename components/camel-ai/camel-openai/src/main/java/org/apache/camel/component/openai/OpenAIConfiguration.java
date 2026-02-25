@@ -96,6 +96,38 @@ public class OpenAIConfiguration implements Cloneable {
     @Metadata(description = "Additional JSON properties to include in the request body (e.g. additionalBodyProperty.traceId=123)")
     private Map<String, Object> additionalBodyProperty;
 
+    @UriParam(prefix = "mcpServer.", multiValue = true)
+    @Metadata(description = "MCP (Model Context Protocol) server configurations. "
+                            + "Define servers using prefix notation: mcpServer.<name>.transportType=stdio|sse|streamableHttp, "
+                            + "mcpServer.<name>.command=<cmd> (stdio), mcpServer.<name>.args=<comma-separated> (stdio), "
+                            + "mcpServer.<name>.url=<url> (sse/streamableHttp)")
+    private Map<String, Object> mcpServer;
+
+    @UriParam(defaultValue = "50")
+    @Metadata(description = "Maximum number of tool call loop iterations to prevent infinite loops")
+    private int maxToolIterations = 50;
+
+    @UriParam(defaultValue = "true")
+    @Metadata(description = "When true and MCP servers are configured, automatically execute tool calls "
+                            + "and loop back to the model. When false, tool calls are returned as the message body for manual handling.")
+    private boolean autoToolExecution = true;
+
+    @UriParam
+    @Metadata(description = "Comma-separated list of MCP protocol versions to advertise when connecting to MCP servers "
+                            + "using Streamable HTTP transport. When not set, the SDK default is used. "
+                            + "Example: 2024-11-05,2025-03-26,2025-06-18")
+    private String mcpProtocolVersions;
+
+    @UriParam(defaultValue = "20")
+    @Metadata(description = "Timeout in seconds for MCP tool call requests. Applies to all MCP operations including "
+                            + "tool execution and initialization.")
+    private int mcpTimeout = 20;
+
+    @UriParam(defaultValue = "true")
+    @Metadata(description = "Automatically reconnect to MCP servers when a tool call fails due to a transport error, "
+                            + "and retry the call once.")
+    private boolean mcpReconnect = true;
+
     // ========== EMBEDDINGS CONFIGURATION ==========
 
     @UriParam
@@ -261,6 +293,54 @@ public class OpenAIConfiguration implements Cloneable {
 
     public void setEncodingFormat(String encodingFormat) {
         this.encodingFormat = encodingFormat;
+    }
+
+    public Map<String, Object> getMcpServer() {
+        return mcpServer;
+    }
+
+    public void setMcpServer(Map<String, Object> mcpServer) {
+        this.mcpServer = mcpServer;
+    }
+
+    public int getMaxToolIterations() {
+        return maxToolIterations;
+    }
+
+    public void setMaxToolIterations(int maxToolIterations) {
+        this.maxToolIterations = maxToolIterations;
+    }
+
+    public boolean isAutoToolExecution() {
+        return autoToolExecution;
+    }
+
+    public void setAutoToolExecution(boolean autoToolExecution) {
+        this.autoToolExecution = autoToolExecution;
+    }
+
+    public String getMcpProtocolVersions() {
+        return mcpProtocolVersions;
+    }
+
+    public void setMcpProtocolVersions(String mcpProtocolVersions) {
+        this.mcpProtocolVersions = mcpProtocolVersions;
+    }
+
+    public int getMcpTimeout() {
+        return mcpTimeout;
+    }
+
+    public void setMcpTimeout(int mcpTimeout) {
+        this.mcpTimeout = mcpTimeout;
+    }
+
+    public boolean isMcpReconnect() {
+        return mcpReconnect;
+    }
+
+    public void setMcpReconnect(boolean mcpReconnect) {
+        this.mcpReconnect = mcpReconnect;
     }
 
     public OpenAIConfiguration copy() {

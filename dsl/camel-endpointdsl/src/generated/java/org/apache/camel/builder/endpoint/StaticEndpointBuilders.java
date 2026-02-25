@@ -12327,7 +12327,8 @@ public class StaticEndpointBuilders {
      * Syntax: <code>openai:operation</code>
      * 
      * Path parameter: operation (required)
-     * The operation to perform: 'chat-completion' or 'embeddings'
+     * The operation to perform: 'chat-completion', 'embeddings', or
+     * 'tool-execution'
      * 
      * @param path operation
      * @return the dsl builder
@@ -12346,7 +12347,8 @@ public class StaticEndpointBuilders {
      * Syntax: <code>openai:operation</code>
      * 
      * Path parameter: operation (required)
-     * The operation to perform: 'chat-completion' or 'embeddings'
+     * The operation to perform: 'chat-completion', 'embeddings', or
+     * 'tool-execution'
      * 
      * @param componentName to use a custom component name for the endpoint
      * instead of the default name
