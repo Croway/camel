@@ -21,6 +21,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.Processor;
@@ -59,6 +61,7 @@ public class StubBeanRepository implements BeanRepository {
     private final Comparator<?> service8 = (o1, o2) -> 0;
     private final RoutePolicy service9 = new RoutePolicySupport() {
     };
+    private final ExecutorService service10 = Executors.newCachedThreadPool();
 
     private final String stubPattern;
 
@@ -132,6 +135,9 @@ public class StubBeanRepository implements BeanRepository {
         }
         if (RoutePolicy.class.isAssignableFrom(type)) {
             return (T) service9;
+        }
+        if (ExecutorService.class.isAssignableFrom(type)) {
+            return (T) service10;
         }
         if (Logger.class.isAssignableFrom(type)) {
             return (T) LOG;
