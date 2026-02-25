@@ -102,12 +102,41 @@ context.setStreamCaching(true);
 
 or on routes:
 
+[tabs]
+====
+
+Java::
++
 [source,java]
 ----
 from("file:inbox")
   .streamCaching()
   .to("bean:foo");
 ----
+
+XML::
++
+[source,xml]
+----
+<route streamCache="true">
+    <from uri="file:inbox"/>
+    <to uri="bean:foo"/>
+</route>
+----
+
+YAML::
++
+[source,yaml]
+----
+- route:
+    streamCache: "true"
+    from:
+      uri: file:inbox
+      steps:
+        - to:
+            uri: bean:foo
+----
+====
 
 == Configuring Stream Caching using Application Properties
 
@@ -143,43 +172,108 @@ In xref:spring-xml-extensions.adoc[Spring XML] you can enable stream caching on 
 </camelContext>
 ----
 
-=== Using spoolUsedHeapMemoryThreshold
+== Using spoolUsedHeapMemoryThreshold
 
 By default, stream caching will spool only big payloads (128 KB or bigger) to disk. However you can also set the `spoolUsedHeapMemoryThreshold` option which is a percentage of used heap memory. This can be used to also spool to disk when running low on memory.
 
 For example with:
 
+[tabs]
+====
+
+Spring XML::
++
 [source,xml]
 ----
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolUsedHeapMemoryThreshold="70"/>
 ----
 
+Application Properties::
++
+[source,properties]
+----
+camel.main.streamCachingSpoolEnabled = true
+camel.main.streamCachingSpoolDirectory = /tmp/cachedir
+camel.main.streamCachingSpoolUsedHeapMemoryThreshold = 70
+----
+====
+
 Then notice that as `spoolThreshold` is default enabled with 128 KB, then we have both thresholds in use (`spoolThreshold` and `spoolUsedHeapMemoryThreshold`). And in this example then we only spool to disk if payload is > 128 KB and that used heap memory is > 70%. The reason is that we have the option `anySpoolRules` as default `false`. That means both rules must be `true` (e.g. AND).
 
 If we want to spool to disk if either of the rules (e.g. OR), then we can do:
 
+[tabs]
+====
+
+Spring XML::
++
 [source,xml]
 ----
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolUsedHeapMemoryThreshold="70" anySpoolRules="true"/>
 ----
 
+Application Properties::
++
+[source,properties]
+----
+camel.main.streamCachingSpoolEnabled = true
+camel.main.streamCachingSpoolDirectory = /tmp/cachedir
+camel.main.streamCachingSpoolUsedHeapMemoryThreshold = 70
+camel.main.streamCachingAnySpoolRules = true
+----
+====
+
+
 If we only want to spool to disk if we run low on memory then we can set:
 
+[tabs]
+====
+
+Spring XML::
++
 [source,xml]
 ----
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolThreshold="-1" spoolUsedHeapMemoryThreshold="70"/>
 ----
 
+Application Properties::
++
+[source,properties]
+----
+camel.main.streamCachingSpoolEnabled = true
+camel.main.streamCachingSpoolDirectory = /tmp/cachedir
+camel.main.streamCachingSpoolThreshold = -1
+camel.main.streamCachingSpoolUsedHeapMemoryThreshold = 70
+----
+====
+
 then we do not use the `spoolThreshold` rule, and only the heap memory based is in use.
 
 By default, the upper limit of the used heap memory is based on the maximum heap size. Though you can also configure to use the committed heap size as the upper limit, this is done using the `spoolUsedHeapMemoryLimit` option as shown below:
 
+[tabs]
+====
+
+Spring XML::
++
 [source,xml]
 ----
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolUsedHeapMemoryThreshold="70" spoolUsedHeapMemoryLimit="Committed"/>
 ----
 
-== Using custom SpoolRule implementations
+Application Properties::
++
+[source,properties]
+----
+camel.main.streamCachingSpoolEnabled = true
+camel.main.streamCachingSpoolDirectory = /tmp/cachedir
+camel.main.streamCachingSpoolUsedHeapMemoryThreshold = 70
+camel.main.streamCachingSpoolUsedHeapMemoryLimit = Committed
+----
+
+====
+
+== Using custom SpoolRule implementations (advanced)
 
 You can implement your custom rules to determine if the stream should be spooled to disk. This can be done by implementing the interface `org.apache.camel.spi.StreamCachingStrategy.SpoolRule` which has a single method:
 
@@ -191,31 +285,52 @@ boolean shouldSpoolCache(long length);
 The `length` is the length of the stream.
 To use the rule then add it to the `StreamCachingStrategy` as shown below:
 
+[tabs]
+====
+
+Java::
++
 [source,java]
 ----
 SpoolRule mySpoolRule = ...
 context.getStreamCachingStrategy().addSpoolRule(mySpoolRule);
 ----
 
-And from XML you need to define a `<bean>` with your custom rule:
-
+Spring XML::
++
+And from Spring XML you need to define a `<bean>` with your custom rule:
++
 [source,xml]
 ----
 <bean id="mySpoolRule" class="com.foo.MySpoolRule"/>
 
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolRules="mySpoolRule"/>
 ----
-
++
 Using the spoolRules attribute on `<streamCaching>`. if you have more rules, then separate them by comma.
-
++
 [source,xml]
 ----
 <streamCaching id="myCacheConfig" spoolEnabled="true" spoolDirectory="/tmp/cachedir" spoolRules="mySpoolRule,myOtherSpoolRule"/>
 ----
 
+Application Properties::
++
+When using Spring Boot or Camel Standalone you can also configure in `application.properties`:
++
+[source,properties]
+----
+# refers to the bean id of the rule object
+camel.main.streamCachingSpoolRules=mySpoolRule
+# you can also specify the class via
+camel.main.streamCachingSpoolRules=#class:com.foo.MySpoolRule
+----
+====
+
+
 == Using StreamCachingProcessor
 
-Since Camel 4.11 this processor can be used to convert the current message body to a `StreamCache`. This allows the body to be re-read multiple times and can be placed at any point in a Camel route.
+Since *Camel 4.11* this processor can be used to convert the current message body to a `StreamCache`. This allows the body to be re-read multiple times and can be placed at any point in a Camel route.
 
 [source, java]
 ----

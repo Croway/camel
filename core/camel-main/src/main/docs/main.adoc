@@ -19,7 +19,7 @@ The following tables lists all the options:
 
 // main options: START
 === Camel Main configurations
-The camel.main supports 125 options, which are listed below.
+The camel.main supports 126 options, which are listed below.
 
 [width="100%",cols="2,5,^1,2",options="header"]
 |===
@@ -134,8 +134,9 @@ The camel.main supports 125 options, which are listed below.
 | *camel.main.streamCachingSpool{zwsp}Cipher* | Sets a stream caching cipher name to use when spooling to disk to write with encryption. By default the data is not encrypted. |  | String
 | *camel.main.streamCachingSpool{zwsp}Directory* | Sets the stream caching spool (temporary) directory to use for overflow and spooling to disk. If no spool directory has been explicit configured, then a temporary directory is created in the java.io.tmpdir directory. |  | String
 | *camel.main.streamCachingSpool{zwsp}Enabled* | To enable stream caching spooling to disk. This means, for large stream messages (over 128 KB by default) will be cached in a temporary file instead, and Camel will handle deleting the temporary file once the cached stream is no longer necessary. Default is false. | false | boolean
+| *camel.main.streamCachingSpool{zwsp}Rules* | Sets custom rules (org.apache.camel.spi.StreamCachingStrategy.SpoolRule) for deciding when to spool to disk. Multiple rules can be separated by comma. |  | String
 | *camel.main.streamCachingSpool{zwsp}Threshold* | Stream caching threshold in bytes when overflow to disk is activated. The default threshold is 128kb. Use -1 to disable overflow to disk. |  | long
-| *camel.main.streamCachingSpool{zwsp}UsedHeapMemoryLimit* | Sets what the upper bounds should be when streamCachingSpoolUsedHeapMemoryThreshold is in use. |  | String
+| *camel.main.streamCachingSpool{zwsp}UsedHeapMemoryLimit* | Sets what the upper bounds should be when streamCachingSpoolUsedHeapMemoryThreshold is in use. | Max | String
 | *camel.main.streamCachingSpool{zwsp}UsedHeapMemoryThreshold* | Sets a percentage (1-99) of used heap memory threshold to activate stream caching spooling to disk. |  | int
 | *camel.main.streamCaching{zwsp}StatisticsEnabled* | Sets whether stream caching statistics is enabled. | false | boolean
 | *camel.main.threadNamePattern* | Sets the thread name pattern used for creating the full thread name. The default pattern is: Camel (#camelId#) thread ##counter# - #name# Where #camelId# is the name of the CamelContext. and #counter# is a unique incrementing counter. and #name# is the regular thread name. You can also use #longName# which is the long thread name which can includes endpoint parameters etc. |  | String

@@ -90,6 +90,7 @@ import org.apache.camel.spi.ThreadPoolProfile;
 import org.apache.camel.spi.UnitOfWorkFactory;
 import org.apache.camel.spi.UuidGenerator;
 import org.apache.camel.spi.VariableRepositoryFactory;
+import org.apache.camel.support.CamelContextHelper;
 import org.apache.camel.support.ClassicUuidGenerator;
 import org.apache.camel.support.DefaultContextReloadStrategy;
 import org.apache.camel.support.DefaultUuidGenerator;
@@ -237,6 +238,13 @@ public final class DefaultConfigurationConfigurer {
         if (config.getStreamCachingSpoolUsedHeapMemoryThreshold() != 0) {
             camelContext.getStreamCachingStrategy()
                     .setSpoolUsedHeapMemoryThreshold(config.getStreamCachingSpoolUsedHeapMemoryThreshold());
+        }
+        if (config.getStreamCachingSpoolRules() != null) {
+            for (String ref : config.getStreamCachingSpoolRules().split(",")) {
+                var custom
+                        = CamelContextHelper.mandatoryLookup(camelContext, ref.trim(), StreamCachingStrategy.SpoolRule.class);
+                camelContext.getStreamCachingStrategy().addSpoolRule(custom);
+            }
         }
 
         if ("default".equals(config.getUuidGenerator())) {
