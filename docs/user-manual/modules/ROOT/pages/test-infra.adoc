@@ -19,7 +19,6 @@ check the code for additional details.
 
 === Writing A New Test Infrastructure Module
 
-
 [NOTE]
 ====
 This section is aimed at Camel maintainers that need to write new test infra components. End users can skip this section.
@@ -72,7 +71,7 @@ interface.
 Ideally, there should be two concrete implementations of the services: one of the remote service (if applicable) and
 another for the container service: 
 
-[source, bash]
+[source,text]
 ----
               MyService
                  / \
@@ -92,15 +91,13 @@ the service accordingly.
 
 The https://github.com/apache/camel/blob/main/test-infra/camel-test-infra-common/src/main/java/org/apache/camel/test/infra/common/services/TestService.java[TestService]
 interface can be used to integrate the actual Service implementation with JUnit and its lifecycle.
-The services should try to minimize the test execution time and resource usage when running. As such,
-the https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/BeforeAllCallback.html[BeforeAllCallback]
-and https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/AfterAllCallback.html[AfterAllCallback]
+The services should try to minimize the test execution time and resource usage when running. As such the JUnit `@BeforeAllCallback` and `@AfterAllCallback`
 should be the preferred extensions whenever possible because they allow the instance of the infrastructure to be static
 throughout the test execution.
 
 [NOTE]
 ====
-Bear in mind that, according to the https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/RegisterExtension.html[JUnit 5 extension]
+Bear in mind that, according to the https://docs.junit.org/6.0.3/extensions/registering-extensions.html#registration-programmatic[JUnit 6 Extension]
 model, the time of service initialization may differ depending on whether the service instance is declared as
 static or not in the test class. As such, the code should make no assumptions as to its time of initialization.
 ====
@@ -108,7 +105,7 @@ static or not in the test class. As such, the code should make no assumptions as
 ==== Registering Properties
 
 All services should register the properties, via `System.setProperty` that allow access to the services. This is required
- to resolve those properties when running tests using the Spring framework. This registration allows the properties
+to resolve those properties when running tests using the Spring framework. This registration allows the properties
 to be resolved in Spring's XML files. 
 
 This registration is done in the `registerProperties` methods during the service initialization. 
@@ -172,8 +169,7 @@ On the dependencies above, the dependency version is set to `${project.version}`
 Camel version when used outside the Camel Core project.
 ====
 
-On the test class, add a member variable for the service and annotate it with the https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/RegisterExtension.html[@RegisterExtension],
- to let JUnit 5 manage its lifecycle.
+On the test class, add a member variable for the service and annotate it with the `@RegisterExtension` to let JUnit manage its lifecycle.
 
 [source,java]
 ----
@@ -251,7 +247,7 @@ Assuming Podman is properly installed and configured to behave like docker (i.e.
 
 On most systems that should be similar to the following command: 
 
-[source, console]
+[source,bash]
 ----
 export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
 ----
