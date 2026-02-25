@@ -440,11 +440,13 @@ public class KameletMain extends MainCommandLineSupport {
         answer.getCamelContextExtension().setStartupStepRecorder(new BacklogStartupStepRecorder());
 
         boolean export = "true".equals(getInitialProperties().get(getInstanceType() + ".export"));
+        boolean transform = "true".equals(getInitialProperties().get(getInstanceType() + ".transform"));
         if (export) {
-            setupExport(answer, export);
+            // both when exporting and transforming routes then we need to setup in special mode
+            setupExport(answer, true);
         } else {
             PropertiesComponent pc = (PropertiesComponent) answer.getPropertiesComponent();
-            pc.setPropertiesFunctionResolver(new DependencyDownloaderPropertiesFunctionResolver(answer, false));
+            pc.setPropertiesFunctionResolver(new DependencyDownloaderPropertiesFunctionResolver(answer, false, transform));
         }
 
         // groovy scripts
@@ -482,7 +484,6 @@ public class KameletMain extends MainCommandLineSupport {
         SagaDownloader.registerDownloadReifiers(this);
 
         // if transforming DSL then disable processors as we just want to work on the model (not runtime processors)
-        boolean transform = "true".equals(getInitialProperties().get(getInstanceType() + ".transform"));
         if (transform) {
             // we just want to transform, so disable custom bean or processors as they may use code that does not work
             answer.getGlobalOptions().put(ProcessorReifier.DISABLE_BEAN_OR_PROCESS_PROCESSORS, "true");
@@ -781,7 +782,7 @@ public class KameletMain extends MainCommandLineSupport {
         addInitialProperty("camel.component.properties.ignore-missing-location", "true");
         PropertiesComponent pc = (PropertiesComponent) answer.getPropertiesComponent();
         pc.setPropertiesParser(new ExportPropertiesParser(answer));
-        pc.setPropertiesFunctionResolver(new DependencyDownloaderPropertiesFunctionResolver(answer, export));
+        pc.setPropertiesFunctionResolver(new DependencyDownloaderPropertiesFunctionResolver(answer, export, false));
 
         // override default type converters with our export converter that is more flexible during exporting
         ExportTypeConverter ec = new ExportTypeConverter();

@@ -17,8 +17,10 @@
 package org.apache.camel.main.download;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.component.properties.BooleanPropertiesFunction;
 import org.apache.camel.component.properties.DefaultPropertiesFunctionResolver;
 import org.apache.camel.spi.PropertiesFunction;
+import org.apache.camel.support.service.ServiceHelper;
 
 /**
  * Auto downloaded needed JARs when resolving properties functions.
@@ -26,11 +28,13 @@ import org.apache.camel.spi.PropertiesFunction;
 public class DependencyDownloaderPropertiesFunctionResolver extends DefaultPropertiesFunctionResolver {
 
     private final boolean export;
+    private final boolean transform;
 
-    public DependencyDownloaderPropertiesFunctionResolver(CamelContext camelContext, boolean export) {
+    public DependencyDownloaderPropertiesFunctionResolver(CamelContext camelContext, boolean export, boolean transform) {
         super();
         setCamelContext(camelContext);
         this.export = export;
+        this.transform = transform;
     }
 
     @Override
@@ -78,11 +82,31 @@ public class DependencyDownloaderPropertiesFunctionResolver extends DefaultPrope
                         getCamelContext().getVersion());
             }
         }
+        if ("boolean".equals(name) && transform) {
+            // ensure boolean function can fallback and return a value as we just want to transform
+            var bf = new ExportBooleanFunction();
+            bf.setCamelContext(getCamelContext());
+            ServiceHelper.startService(bf);
+            addPropertiesFunction(bf);
+
+        }
         PropertiesFunction answer = super.resolvePropertiesFunction(name);
         if (answer != null && export) {
             answer = new ExportPropertiesFunction(answer);
         }
         return answer;
+    }
+
+    private static class ExportBooleanFunction extends BooleanPropertiesFunction {
+
+        @Override
+        public String apply(String remainder) {
+            try {
+                return super.apply(remainder);
+            } catch (Exception e) {
+                return "true";
+            }
+        }
     }
 
     private static class ExportPropertiesFunction implements PropertiesFunction {
