@@ -17,11 +17,9 @@
 package org.apache.camel.spi;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Processor;
 
 /**
- * Factory for creating a {@link Processor} that acquires an OAuth 2.0 bearer token using the client_credentials grant
- * and sets the {@code Authorization: Bearer <token>} header on the Exchange message.
+ * Factory for resolving OAuth 2.0 bearer tokens using the client_credentials grant.
  * <p/>
  * This requires camel-oauth on the classpath.
  */
@@ -33,20 +31,19 @@ public interface OAuthClientAuthenticationFactory {
     String FACTORY = "oauth-client-authentication-factory";
 
     /**
-     * Creates a {@link Processor} using explicit configuration.
+     * Resolves a bearer token using explicit configuration.
      * <p/>
-     * The returned Processor, when invoked, will acquire a token from the configured token endpoint using the
-     * client_credentials grant, cache the token if caching is enabled, and set the {@code Authorization: Bearer} header
-     * on the Exchange's message.
+     * Acquires a token from the configured token endpoint using the client_credentials grant. Tokens are cached if
+     * caching is enabled in the config.
      *
      * @param  config    the OAuth client configuration
-     * @return           a Processor that sets the Authorization header
-     * @throws Exception if the processor cannot be created
+     * @return           the bearer token string
+     * @throws Exception if token acquisition fails
      */
-    Processor createOAuthClientAuthenticationProcessor(OAuthClientConfig config) throws Exception;
+    String resolveToken(OAuthClientConfig config) throws Exception;
 
     /**
-     * Creates a {@link Processor} using a named profile resolved from Camel properties.
+     * Resolves a bearer token using a named profile from Camel properties.
      * <p/>
      * Properties are resolved from {@code camel.oauth.<profileName>.*}:
      * <ul>
@@ -61,25 +58,20 @@ public interface OAuthClientAuthenticationFactory {
      *
      * @param  context     the CamelContext to resolve properties from
      * @param  profileName the named profile (e.g., "keycloak", "azure")
-     * @return             a Processor that sets the Authorization header
-     * @throws Exception   if required properties are missing or the processor cannot be created
+     * @return             the bearer token string
+     * @throws Exception   if required properties are missing or token acquisition fails
      */
-    Processor createOAuthClientAuthenticationProcessor(CamelContext context, String profileName) throws Exception;
+    String resolveToken(CamelContext context, String profileName) throws Exception;
 
     /**
-     * Creates a {@link Processor} using the default (unnamed) profile.
+     * Resolves a bearer token using the default (unnamed) profile.
      * <p/>
      * Properties are resolved from {@code camel.oauth.*} directly (backward compatible with existing single-IdP
-     * configuration):
-     * <ul>
-     * <li>{@code camel.oauth.client-id}</li>
-     * <li>{@code camel.oauth.client-secret}</li>
-     * <li>{@code camel.oauth.token-endpoint}</li>
-     * </ul>
+     * configuration).
      *
      * @param  context   the CamelContext to resolve properties from
-     * @return           a Processor that sets the Authorization header
-     * @throws Exception if required properties are missing or the processor cannot be created
+     * @return           the bearer token string
+     * @throws Exception if required properties are missing or token acquisition fails
      */
-    Processor createOAuthClientAuthenticationProcessor(CamelContext context) throws Exception;
+    String resolveToken(CamelContext context) throws Exception;
 }

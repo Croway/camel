@@ -17,7 +17,6 @@
 package org.apache.camel.support;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Processor;
 import org.apache.camel.spi.OAuthClientAuthenticationFactory;
 
 /**
@@ -41,27 +40,14 @@ public final class OAuthHelper {
      * @throws Exception   if the factory is not found or token acquisition fails
      */
     public static String resolveOAuthToken(CamelContext context, String profileName) throws Exception {
-        var factory = ResolverHelper.resolveService(
+        OAuthClientAuthenticationFactory factory = ResolverHelper.resolveService(
                 context,
                 OAuthClientAuthenticationFactory.FACTORY,
-                OAuthClientAuthenticationFactory.class);
+                OAuthClientAuthenticationFactory.class)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Cannot find OAuthClientAuthenticationFactory. "
+                                                                + "Add camel-oauth to the classpath to use oauthProfile."));
 
-        if (factory.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Cannot find OAuthClientAuthenticationFactory. "
-                                               + "Add camel-oauth to the classpath to use oauthProfile.");
-        }
-
-        Processor oauthProcessor = factory.get()
-                .createOAuthClientAuthenticationProcessor(context, profileName);
-
-        DefaultExchange exchange = new DefaultExchange(context);
-        oauthProcessor.process(exchange);
-
-        String authHeader = exchange.getMessage().getHeader("Authorization", String.class);
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring("Bearer ".length());
-        }
-        throw new IllegalStateException("OAuth processor did not set Authorization Bearer header");
+        return factory.resolveToken(context, profileName);
     }
 }

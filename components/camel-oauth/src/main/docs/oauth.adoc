@@ -167,7 +167,7 @@ OAuthClientAuthenticationFactory factory = ResolverHelper.resolveService(
         OAuthClientAuthenticationFactory.class)
     .orElseThrow(() -> new IllegalArgumentException("Add camel-oauth to the classpath"));
 
-Processor oauth = factory.createOAuthClientAuthenticationProcessor(
+String token = factory.resolveToken(
     new OAuthClientConfig()
         .setClientId("my-client")
         .setClientSecret("my-secret")

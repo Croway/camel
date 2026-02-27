@@ -19,38 +19,37 @@ package org.apache.camel.oauth;
 import java.util.Optional;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Processor;
 import org.apache.camel.spi.OAuthClientAuthenticationFactory;
 import org.apache.camel.spi.OAuthClientConfig;
 import org.apache.camel.spi.annotations.JdkService;
 
 /**
- * Default implementation of {@link OAuthClientAuthenticationFactory} that creates
- * {@link OAuthClientCredentialsProcessor} instances for OAuth 2.0 Client Credentials grant.
+ * Default implementation of {@link OAuthClientAuthenticationFactory} that resolves OAuth 2.0 bearer tokens using the
+ * Client Credentials grant.
  * <p/>
- * When an {@link OAuthClientConfig} is provided, the processor uses direct token endpoint calls with thread-safe
- * caching. When no config is provided (default profile), the processor resolves properties from Camel context.
+ * Delegates token acquisition and caching to {@link OAuthClientCredentialsTokenResolver}.
  */
 @JdkService(OAuthClientAuthenticationFactory.FACTORY)
 public class DefaultOAuthClientAuthenticationFactory implements OAuthClientAuthenticationFactory {
 
+    private final OAuthClientCredentialsTokenResolver resolver = new OAuthClientCredentialsTokenResolver();
+
     @Override
-    public Processor createOAuthClientAuthenticationProcessor(OAuthClientConfig config) throws Exception {
+    public String resolveToken(OAuthClientConfig config) throws Exception {
         validateConfig(config);
-        return new OAuthClientCredentialsProcessor(config);
+        return resolver.resolveToken(config);
     }
 
     @Override
-    public Processor createOAuthClientAuthenticationProcessor(CamelContext context, String profileName)
-            throws Exception {
+    public String resolveToken(CamelContext context, String profileName) throws Exception {
         OAuthClientConfig config = resolveProfileConfig(context, "camel.oauth." + profileName + ".");
-        return createOAuthClientAuthenticationProcessor(config);
+        return resolveToken(config);
     }
 
     @Override
-    public Processor createOAuthClientAuthenticationProcessor(CamelContext context) throws Exception {
+    public String resolveToken(CamelContext context) throws Exception {
         OAuthClientConfig config = resolveProfileConfig(context, "camel.oauth.");
-        return createOAuthClientAuthenticationProcessor(config);
+        return resolveToken(config);
     }
 
     private OAuthClientConfig resolveProfileConfig(CamelContext context, String prefix) {
