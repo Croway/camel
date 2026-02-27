@@ -44,11 +44,11 @@ public final class OAuthTokenRequest {
     /**
      * Acquires an access token using the OAuth 2.0 Client Credentials grant.
      *
-     * @param  tokenEndpoint the token endpoint URL
-     * @param  clientId      the client identifier
-     * @param  clientSecret  the client secret
-     * @param  scope         the requested scope (may be null)
-     * @return               the parsed JSON response containing access_token, expires_in, etc.
+     * @param  tokenEndpoint  the token endpoint URL
+     * @param  clientId       the client identifier
+     * @param  clientSecret   the client secret
+     * @param  scope          the requested scope (may be null)
+     * @return                the parsed JSON response containing access_token, expires_in, etc.
      * @throws OAuthException if the token request fails
      */
     public static JsonObject clientCredentialsGrant(
@@ -79,11 +79,11 @@ public final class OAuthTokenRequest {
     /**
      * Refreshes an access token using the refresh_token grant.
      *
-     * @param  tokenEndpoint the token endpoint URL
-     * @param  clientId      the client identifier
-     * @param  clientSecret  the client secret
-     * @param  refreshToken  the refresh token
-     * @return               the parsed JSON response containing the new access_token
+     * @param  tokenEndpoint  the token endpoint URL
+     * @param  clientId       the client identifier
+     * @param  clientSecret   the client secret
+     * @param  refreshToken   the refresh token
+     * @return                the parsed JSON response containing the new access_token
      * @throws OAuthException if the refresh request fails
      */
     public static JsonObject refreshTokenGrant(

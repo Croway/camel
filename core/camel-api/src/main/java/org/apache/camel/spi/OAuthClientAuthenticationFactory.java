@@ -36,8 +36,8 @@ public interface OAuthClientAuthenticationFactory {
      * Creates a {@link Processor} using explicit configuration.
      * <p/>
      * The returned Processor, when invoked, will acquire a token from the configured token endpoint using the
-     * client_credentials grant, cache the token if caching is enabled, and set the {@code Authorization: Bearer}
-     * header on the Exchange's message.
+     * client_credentials grant, cache the token if caching is enabled, and set the {@code Authorization: Bearer} header
+     * on the Exchange's message.
      *
      * @param  config    the OAuth client configuration
      * @return           a Processor that sets the Authorization header
