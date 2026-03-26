@@ -16,6 +16,8 @@
  */
 package org.apache.camel.tracing;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.test.junit6.ExchangeTestSupport;
 import org.junit.jupiter.api.Test;
@@ -102,6 +104,37 @@ class ActiveSpanManagerTest extends ExchangeTestSupport {
         // Check that the current span in path2 is back to parent
         // and hasn't been affected by path1 creating its own child
         ActiveSpanManager.activate(path2, parent);
+    }
+
+    /**
+     * Tests that endScope() followed by deactivate() on the same thread only closes the scope once. This is the fix for
+     * the "Trying to close scope which does not represent current context" error that occurred when
+     * ExchangeAsyncProcessingStartedEvent called endScope() and then deactivate() tried to close the same scope again.
+     */
+    @Test
+    void testEndScopeThenDeactivateClosesOnlyOnce() {
+        Exchange exchange = createExchange();
+        AtomicInteger closeCount = new AtomicInteger(0);
+
+        SpanAdapter span = new MockSpanAdapter() {
+            @Override
+            public AutoCloseable makeCurrent() {
+                return () -> closeCount.incrementAndGet();
+            }
+        };
+
+        ActiveSpanManager.activate(exchange, span);
+        assertEquals(0, closeCount.get());
+
+        // Simulates ExchangeAsyncProcessingStartedEvent calling endScope()
+        ActiveSpanManager.endScope(exchange);
+        assertEquals(1, closeCount.get(), "endScope should close the scope once");
+
+        // Simulates deactivate() called later — should NOT close the scope again
+        ActiveSpanManager.deactivate(exchange);
+        assertEquals(1, closeCount.get(), "deactivate should not close the scope a second time");
+
+        assertNull(ActiveSpanManager.getSpan(exchange));
     }
 
     @Test

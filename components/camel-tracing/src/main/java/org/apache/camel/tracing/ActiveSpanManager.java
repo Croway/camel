@@ -126,11 +126,14 @@ public final class ActiveSpanManager {
         private final Holder parent;
         private final SpanAdapter span;
         private final AutoCloseable scope;
+        private final Thread openThread;
+        private volatile boolean scopeClosed;
 
         Holder(Holder parent, SpanAdapter span) {
             this.parent = parent;
             this.span = span;
             this.scope = span.makeCurrent();
+            this.openThread = Thread.currentThread();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Tracing: started scope: {}", this.scope);
             }
@@ -145,6 +148,16 @@ public final class ActiveSpanManager {
         }
 
         private void closeScope() {
+            if (scopeClosed) {
+                return;
+            }
+            // Only mark as closed when closing from the same thread that opened the scope,
+            // since OTel scopes are thread-local and a close from a different thread is a no-op.
+            // This prevents endScope() on the wrong thread from blocking a later deactivate()
+            // on the correct thread.
+            if (Thread.currentThread() == openThread) {
+                scopeClosed = true;
+            }
             try {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Tracing: closing scope: {}", this.scope);
