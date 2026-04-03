@@ -144,9 +144,16 @@ jobs:
           -Dsonar.projectKey=apache_camel
           -Dsonar.organization=apache
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-          -B -V
+          -B -V -l sonar-scan.log
         env:
           MAVEN_OPTS: "-XX:+UseG1GC -XX:InitialHeapSize=2g -XX:MaxHeapSize=6g -XX:+UseStringDeduplication"
+
+      - name: Archive Sonar scan logs
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
+        with:
+          name: sonar-scan.log
+          path: sonar-scan.log
 
       - name: Update PR check status
         uses: actions/github-script@v7
