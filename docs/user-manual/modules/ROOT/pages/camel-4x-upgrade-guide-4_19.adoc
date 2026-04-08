@@ -571,6 +571,19 @@ import org.apache.camel.component.azure.common.CredentialType;
 The deprecated component-specific enums will be removed in a future release. The new `camel-azure-common` module is
 automatically included as a transitive dependency of all Azure components.
 
+=== camel-undertow
+
+The Undertow consumer no longer unconditionally sets the `Exchange.CHARSET_NAME` property and
+`HTTP_CHARACTER_ENCODING` header to ISO-8859-1 when the incoming request's `Content-Type` header
+does not include an explicit `charset` parameter.
+
+Previously, Undertow's default of ISO-8859-1 was always propagated, which caused incorrect decoding
+of UTF-8 request bodies (e.g., `application/json` without charset). Now, the charset is only set when
+explicitly present in the `Content-Type`, allowing Camel's type conversion to default to UTF-8.
+
+If your application relied on the charset property always being set on Undertow consumer exchanges,
+you may need to adjust your route logic.
+
 === camel-quickfix
 
 Upgraded QuickFixJ from 2.3.2 to 3.0.0 in `camel-quickfix` component.
