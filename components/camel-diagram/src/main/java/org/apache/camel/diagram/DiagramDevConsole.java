@@ -35,7 +35,7 @@ public class DiagramDevConsole extends AbstractDevConsole {
     public static final String FILTER = "filter";
 
     /**
-     * Theme to use: dark, light, transparent, ascii, or unicode
+     * Theme to use: dark, light, transparent, ascii, unicode, or web
      */
     public static final String THEME = "theme";
 
@@ -83,6 +83,22 @@ public class DiagramDevConsole extends AbstractDevConsole {
         boolean refresh = "true".equalsIgnoreCase((String) options.getOrDefault(AUTO_REFRESH, "true"));
 
         try {
+            if (isWebTheme(theme)) {
+                String srcUrl = "/q/dev/route-structure?metric=" + metric;
+                if (!"*".equals(filter)) {
+                    srcUrl += "&filter=" + filter.replace("\"", "&quot;");
+                }
+                String refreshAttr = refresh ? " refresh=\"5\"" : "";
+                String html = "<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>Camel Route Diagram</title>\n"
+                              + "  <script type=\"module\" src=\"/camel/diagram/camel-route-diagram.js\"></script>\n"
+                              + "</head>\n<body style=\"margin:0;padding:16px\">\n"
+                              + "  <camel-route-diagram src=\"" + srcUrl + "\"" + refreshAttr
+                              + " metric></camel-route-diagram>\n"
+                              + "</body>\n</html>\n";
+                sj.add(html);
+                return sj.toString();
+            }
+
             RouteDiagramDumper dumper = PluginHelper.getRouteDiagramDumper(getCamelContext());
             if (isTextTheme(theme)) {
                 String text = dumper.dumpRoutesAsAsciiArt(filter,
@@ -149,6 +165,10 @@ public class DiagramDevConsole extends AbstractDevConsole {
 
     private static boolean isUnicodeTheme(String theme) {
         return "unicode".equalsIgnoreCase(theme);
+    }
+
+    private static boolean isWebTheme(String theme) {
+        return "web".equalsIgnoreCase(theme);
     }
 
 }

@@ -219,6 +219,106 @@ route1
 └──────────────────────┘
 ----
 
+== Interactive Web Component
+
+The diagram module includes a self-contained web component (`<camel-route-diagram>`) that renders
+interactive SVG diagrams in the browser. It fetches route structure JSON from the dev console and
+performs layout and rendering entirely client-side.
+
+=== Using the dev console
+
+Access the interactive diagram via the dev console with `theme=web`:
+
+[source,bash]
+----
+# In browser, navigate to:
+http://localhost:8080/q/dev/route-diagram?theme=web
+----
+
+=== Embedding in a web page
+
+The web component can be embedded in any HTML page:
+
+[source,html]
+----
+<script type="module" src="/camel/diagram/camel-route-diagram.js"></script>
+
+<camel-route-diagram
+  src="/q/dev/route-structure"
+  refresh="5"
+  metric>
+</camel-route-diagram>
+----
+
+=== Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Default | Description
+
+| `src`
+| _(required)_
+| URL to the route-structure JSON endpoint
+
+| `refresh`
+| `0`
+| Polling interval in seconds (0 = disabled)
+
+| `filter`
+|
+| Route ID filter pattern (passed as query parameter)
+
+| `node-width`
+| `180`
+| Node box width in pixels
+
+| `font-size`
+| `12`
+| Font size in pixels
+
+| `node-label`
+| `code`
+| Label mode: `code`, `description`, or `both`
+
+| `metric`
+| `true`
+| Show exchange count annotations on arrows
+
+| `tooltips`
+| `false`
+| Show statistics tooltip on node hover (total, failed, inflight, processing times)
+
+| `node-counters`
+| `false`
+| Show exchange count badge on each node
+
+| `selectable`
+| `false`
+| Enable click-to-select nodes. Emits a `node-selected` CustomEvent with `detail: { nodeId, type }`
+
+| `pan-zoom`
+| `false`
+| Enable mouse-wheel zoom and drag-to-pan on the diagram
+
+| `fit-view`
+| `false`
+| Auto-scale SVG to fit the container on load
+|===
+
+=== Theming
+
+The component automatically adapts to dark/light mode via `prefers-color-scheme`.
+Custom colors can be set using CSS custom properties on the host element:
+
+[source,css]
+----
+camel-route-diagram {
+  --diagram-bg: #1e1e1e;
+  --diagram-text: #888;
+  --diagram-error: #e53935;
+}
+----
+
 == Path Highlighting
 
 You can highlight specific paths through routes by specifying node IDs.
