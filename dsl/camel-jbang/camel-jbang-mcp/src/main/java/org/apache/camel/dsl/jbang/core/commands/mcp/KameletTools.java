@@ -26,6 +26,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import io.quarkiverse.mcp.server.ToolCallException;
+import org.apache.camel.main.util.VersionHelper;
 import org.apache.camel.dsl.jbang.core.commands.catalog.KameletCatalogHelper;
 import org.apache.camel.dsl.jbang.core.commands.catalog.KameletModel;
 import org.apache.camel.dsl.jbang.core.commands.catalog.KameletOptionModel;
@@ -53,7 +54,7 @@ public class KameletTools {
 
         try {
             String version = kameletsVersion != null && !kameletsVersion.isBlank()
-                    ? kameletsVersion : RuntimeType.KAMELETS_VERSION;
+                    ? kameletsVersion : VersionHelper.extractKameletsVersion();
 
             Map<String, Object> kamelets = KameletCatalogHelper.loadKamelets(version, null);
 
@@ -108,7 +109,7 @@ public class KameletTools {
 
         try {
             String version = kameletsVersion != null && !kameletsVersion.isBlank()
-                    ? kameletsVersion : RuntimeType.KAMELETS_VERSION;
+                    ? kameletsVersion : VersionHelper.extractKameletsVersion();
 
             KameletModel km = KameletCatalogHelper.loadKameletModel(kamelet, version, null);
             if (km == null) {
