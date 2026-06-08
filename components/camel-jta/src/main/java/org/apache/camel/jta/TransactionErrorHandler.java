@@ -310,6 +310,13 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
     }
 
     @Override
+    protected void doResume() throws Exception {
+        super.doResume();
+        // reset flag when resuming
+        preparingShutdown = false;
+    }
+
+    @Override
     protected void doStop() throws Exception {
         // noop, do not stop any services which we only do when shutting down
         // as the error handler can be context scoped, and should not stop in
@@ -343,6 +350,9 @@ public class TransactionErrorHandler extends ErrorHandlerSupport
 
     @Override
     public void prepareShutdown(boolean suspendOnly, boolean forced) {
+        if (suspendOnly) {
+            return;
+        }
         // prepare for shutdown, eg do not allow redelivery if configured
         LOG.trace("Prepare shutdown on error handler {}", this);
         preparingShutdown = true;
