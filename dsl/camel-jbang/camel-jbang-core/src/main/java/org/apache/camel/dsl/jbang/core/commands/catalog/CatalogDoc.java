@@ -38,6 +38,7 @@ import org.apache.camel.dsl.jbang.core.common.RuntimeType;
 import org.apache.camel.dsl.jbang.core.common.RuntimeTypeConverter;
 import org.apache.camel.dsl.jbang.core.common.TerminalWidthHelper;
 import org.apache.camel.main.util.SuggestSimilarHelper;
+import org.apache.camel.main.util.VersionHelper;
 import org.apache.camel.tooling.maven.MavenGav;
 import org.apache.camel.tooling.model.BaseOptionModel;
 import org.apache.camel.tooling.model.ComponentModel;
@@ -110,9 +111,8 @@ public class CatalogDoc extends CamelCommand {
     boolean headers;
 
     @CommandLine.Option(names = {
-            "--kamelets-version" }, description = "Apache Camel Kamelets version",
-                        defaultValue = RuntimeType.KAMELETS_VERSION)
-    String kameletsVersion = RuntimeType.KAMELETS_VERSION;
+            "--kamelets-version" }, description = "Apache Camel Kamelets version (auto-detected from classpath if not set)")
+    String kameletsVersion;
 
     CamelCatalog catalog;
 
@@ -135,6 +135,9 @@ public class CatalogDoc extends CamelCommand {
 
     @Override
     public Integer doCall() throws Exception {
+        if (kameletsVersion == null) {
+            kameletsVersion = VersionHelper.extractKameletsVersion();
+        }
         this.catalog = loadCatalog();
 
         String prefix = StringHelper.before(name, ":");
