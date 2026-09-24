@@ -174,7 +174,6 @@
 :camel-jbang-plugin-mcp
 :camel-jbang-plugin-route-parser
 :camel-jbang-plugin-tui
-:camel-jbang-plugin-validate
 :camel-jcache
 :camel-jcr
 :camel-jetty
@@ -227,7 +226,6 @@
 :camel-olingo2
 :camel-olingo2-api
 :camel-olingo2-parent
-:camel-openapi-validator
 :camel-openstack
 :camel-opentelemetry-metrics
 :camel-optaplanner
@@ -237,7 +235,6 @@
 :camel-pgevent
 :camel-pgvector
 :camel-pinecone
-:camel-platform-http-jolokia
 :camel-plc4x
 :camel-pqc
 :camel-printer
@@ -384,7 +381,6 @@
 :camel-xml-jaxb-dsl-test-spring
 :camel-xmlsecurity
 :camel-xmpp
-:camel-yaml-dsl-validator
 :camel-yaml-dsl-validator-maven-plugin
 :camel-zeebe
 :camel-zendesk

@@ -1875,7 +1875,7 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-openapi-validator</artifactId>
-        <version>4.22.1</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
@@ -1955,7 +1955,7 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-platform-http-jolokia</artifactId>
-        <version>4.22.1</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
@@ -2655,7 +2655,7 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-yaml-dsl-validator</artifactId>
-        <version>4.22.1</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
