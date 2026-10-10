@@ -74,6 +74,18 @@ public class KnownDependenciesResolverTest {
     }
 
     @Test
+    void theShippedMappingResolvesMySqlDataSources() {
+        // a route can declare the MySQL datasource as a bean instead of the driver class
+        KnownDependenciesResolver resolver = new KnownDependenciesResolver(new SimpleCamelContext(), null, null);
+        resolver.loadKnownDependencies();
+
+        assertGav(resolver, "com.mysql.cj.jdbc.Driver", "com.mysql", "mysql-connector-j");
+        assertGav(resolver, "com.mysql.cj.jdbc.MysqlDataSource", "com.mysql", "mysql-connector-j");
+        assertGav(resolver, "com.mysql.cj.jdbc.MysqlConnectionPoolDataSource", "com.mysql", "mysql-connector-j");
+        assertGav(resolver, "com.mysql.cj.jdbc.MysqlXADataSource", "com.mysql", "mysql-connector-j");
+    }
+
+    @Test
     void anImportResolvesAnyClassOfAComponent() {
         // CAMEL-25239: any class of a component a source imports, not only the component class itself, such as the
         // constants of the headers of a component that a kamelet uses
